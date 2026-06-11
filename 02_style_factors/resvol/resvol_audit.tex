@@ -1,0 +1,301 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{url}
+\usepackage[hidelinks,bookmarks=true,bookmarksopen=true]{hyperref}
+\usepackage{siunitx}
+\usepackage{parskip}
+
+\sisetup{group-separator={,}, detect-weight=true, detect-family=true}
+\renewcommand{\arraystretch}{1.15}
+
+\definecolor{pass}{RGB}{0,140,0}
+\definecolor{warn}{RGB}{200,120,0}
+\definecolor{fail}{RGB}{180,0,0}
+\definecolor{note}{RGB}{60,60,180}
+\definecolor{accent}{HTML}{01696F}
+\definecolor{ink}{HTML}{28251D}
+\definecolor{muted}{HTML}{7A7974}
+\definecolor{rule}{HTML}{D4D1CA}
+
+\newcommand{\PASS}[1]{\textcolor{pass}{\textbf{#1}}}
+\newcommand{\WARN}[1]{\textcolor{warn}{\textbf{#1}}}
+\newcommand{\FAIL}[1]{\textcolor{fail}{\textbf{#1}}}
+\newcommand{\NOTE}[1]{\textcolor{note}{\textit{#1}}}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}{}{0pt}{}
+  [\vspace{-2pt}\textcolor{rule}{\rule{\linewidth}{0.4pt}}]
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{ink}}{}{0pt}{}
+
+\titlespacing*{\section}{0pt}{14pt}{6pt}
+\titlespacing*{\subsection}{0pt}{10pt}{2pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{muted}use4-learning-lab --- reference run 2026-06-11}
+\fancyfoot[C]{\footnotesize\color{muted}\leftmark}
+\fancyfoot[R]{\footnotesize\color{muted}\thepage}
+
+\title{\textbf{Residual Volatility (RESVOL) --- Factor Construction Audit}\\[2pt]
+\large USE4-Faithful Implementation --- \texttt{resvol\_build.ipynb}\\[4pt]
+\normalsize USE4 Learning Lab --- Reference Audit}
+\author{Audit Date: 2026-06-11}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Purpose and Scope}
+
+Audits the Residual Volatility factor:
+$\mathrm{RESVOL} = 0.75\,\mathrm{DASTD} + 0.15\,\mathrm{CMRA} + 0.10\,\mathrm{HSIGMA}$
+(USE4 Empirical Notes, Appendix~A, p.~54), orthogonalised to the Beta factor
+(no-intercept $\sqrt{\text{mcap}}$ WLS on \texttt{beta\_score}) after the trim.
+
+\smallskip
+\textbf{Scope.} This audit covers every pipeline stage of
+\texttt{resvol\_build.ipynb} from the lab's reference run of 2026-06-11: all printed diagnostics, the
+validation battery, and the output parquet schema. All numerical values are
+verbatim from the executed notebook. The notebook generates no figures.
+
+\NOTE{Reference numbers: every value in this document comes verbatim from the lab's reference run of 2026-06-11 (Sharadar data through 2026-06-10). Your rebuild will differ in row counts and tail statistics with data vintage; distribution shapes, stability coefficients, and check outcomes should match. Treat persistent sign or order-of-magnitude differences as bugs in your build until proven otherwise.}
+
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Output Schema}
+
+The deliverable is \path{data/out/resvol_use4.parquet}, written with
+\texttt{compression="zstd"}, \newline\texttt{statistics=True}.
+
+\begin{table}[h!]
+\centering
+\caption{Output schema}
+\begin{tabular}{llp{7.4cm}}
+\toprule
+\textbf{Column} & \textbf{Dtype} & \textbf{Description} \\
+\midrule
+\texttt{permaticker} & \texttt{Int64} & Sharadar permanent ticker ID \\
+\texttt{signal\_date} & \texttt{Date} & End-of-month rebalance date \\
+\texttt{in\_estu} & \texttt{Bool} & ESTU membership on \texttt{signal\_date} \\
+\texttt{mcap} & \texttt{Float64} & Market cap on \texttt{signal\_date} (cap-weighting) \\
+\texttt{resvol} & \texttt{Float64} & Raw descriptor: weighted DASTD/CMRA/HSIGMA composite, post-trim \\
+\texttt{resvol\_score} & \texttt{Float64} & Final standardised exposure (the deliverable) \\
+\texttt{n\_obs} & \texttt{UInt32} & Valid observations in the window ($\geq 252$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Shared Infrastructure}
+
+All factor builds consume the shared estimation universe
+\path{data/out/estu_monthly.parquet} (audited separately in
+\texttt{estu\_audit.tex}); the time-series builds additionally consume the
+shared daily-returns artifact (audited in \texttt{daily\_panel\_audit.tex}).
+On this run the factor-level view of the shared inputs was:
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item Signal calendar: \textbf{330 dates} (1999-01-29 $\to$ 2026-06-10)
+  \item ESTU size: mean \textbf{2{,}494}, min \textbf{1{,}791}, max \textbf{3{,}045}
+  \item Daily artifact: \textbf{38{,}997{,}999} rows, \textbf{17{,}413} tickers (1998-01-02 $\to$ 2026-06-10); loader mode \textbf{FAST} (commit-aware gate)
+  \item \texttt{\_td\_to\_sig}: \textbf{7{,}153} trading days mapped; missing-benchmark dates \textbf{0} (target $<$ 30)
+  \item Beta artifact: \textbf{1{,}841{,}672} rows, 327 dates (upstream input for HSIGMA and orthogonalisation)
+\end{itemize}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Known Deviations from PDF Spec}
+
+This section mirrors the complete NOT-IN-PDF master list from
+\texttt{resvol\_spec.ipynb} (\S14.) --- every judgment call the USE4 PDFs do not
+specify, with the chosen solution and its revisit trigger. Rejected alternatives
+are documented in the guide; the four-part validity arguments (USE4 requirement
+$\to$ deviation $\to$ solution $\to$ defence) live in the pipeline-level
+register, \path{docs/deviations_register.tex}.
+
+\begin{longtable}{@{}p{0.5cm}p{3.6cm}p{6.0cm}p{3.8cm}@{}}
+\caption{NOT-IN-PDF decisions (mirrors the guide master list)}\\
+\toprule
+\textbf{\#} & \textbf{Decision} & \textbf{Chosen solution} & \textbf{Revisit when} \\
+\midrule
+\endhead
+1 & DASTD/HSIGMA denominator & $\Sigma$w\_d (no bias correction) & If cross-sectional distribution is unexpectedly wide \\[3pt]
+2 & CMRA month direction & Backwards from signal\_date (most-recent = month 1) & Either is valid; backwards is more natural for "trailing" \\[3pt]
+3 & CMRA with Z\_min < --1 & Clip Z\_min to --0.999 before log & Catastrophically rare; either is acceptable \\[3pt]
+4 & HSIGMA regression source & Re-run fresh WLS from daily data (HL=63, T=252) & Once Beta stores residuals, loading is faster \\[3pt]
+5 & Orthogonalise to beta\_score vs raw beta & beta\_score (standardised exposure) & Factor-model convention strongly prefers standardised \\[3pt]
+6 & Intercept in ortho regression & No intercept & No intercept is standard; Stage 6 handles demeaning \\[3pt]
+7 & Pipeline order & Clip $\to$ Orthogonalise $\to$ Standardise & Barra practice clips first to avoid outliers biasing the regression slope \\[3pt]
+8 & MIN\_OBS & 252 (full window required for CMRA) & Could partially implement RESVOL with reduced composite weights \\[3pt]
+9 & Sub-descriptor audit columns & Not saved (minimal schema: resvol + resvol\_score only) & Add if debugging reveals sub-descriptor decomposition is needed \\[3pt]
+\bottomrule
+\end{longtable}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Stage-by-Stage Audit}
+
+%──────────────────────────────────
+\subsection{Stage 1 --- Shared daily-returns artifact}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Excess returns and the ESTU cap-weighted benchmark (built and validated once in \texttt{daily\_panel\_build.ipynb}; see \texttt{daily\_panel\_audit.tex}).
+  \item[Implementation] \texttt{factor\_lib.load\_daily\_artifacts}: \texttt{daily}, ticker map, trading days, commit-aware FAST gate.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item \textbf{38{,}997{,}999} rows, \textbf{17{,}413} tickers (1998-01-02 $\to$ 2026-06-10)
+      \item Working set $\approx$1.4 GB; mode \textbf{FAST}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 2 --- Load shared ESTU}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] USE4 ESTU = MSCI USA IMI; shared \path{estu_monthly.parquet}.
+  \item[Implementation] In-ESTU members + monthly calendar; mega-cap spot checks.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item 330 dates (1999-01-29 $\to$ 2026-06-10); in-ESTU rows \textbf{822{,}918}; size mean \textbf{2{,}494}
+      \item Spot: JPM/MSFT \textbf{330} months; GOOGL \textbf{261}; AAPL \textbf{257}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 4 --- RESVOL estimator}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] DASTD (252d, 42d HL weighted std), CMRA (12-month cumulative range), HSIGMA (residual std, 252d, 63d HL).
+  \item[Implementation] Composite $0.75/0.15/0.10$ from the daily artifact + beta artifact.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Raw panel: \textbf{1{,}606{,}079} rows, \textbf{330} dates, \textbf{15{,}809} tickers; duplicates \textbf{0}
+      \item Spot 2026-05-29: 4{,}021 tickers, median resvol \textbf{0.08111}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 5 --- Outlier trim (3$\sigma$)}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Methodology \S2.2 trim.
+  \item[Implementation] CW mean $\pm\,3\cdot$EW std (ESTU bounds, applied to all).
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Clipped (ESTU): \textbf{11{,}916} / 786{,}641 = \textbf{1.51\%} (target 0.5--2\%)
+      \item Bounds: lo mean $-0.15743$; hi mean $0.28208$ (max $0.76899$)
+      \item Post-trim at 2026-05-29 (ESTU, $n=2{,}614$): mean 0.08552, std 0.05434, skew 1.865, kurt 4.457
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 5.5 --- Orthogonalise to Beta}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] RESVOL is orthogonalised to Beta to mitigate collinearity.
+  \item[Implementation] Per-date no-intercept WLS $\gamma_t$ of resvol on \texttt{beta\_score}, weights $\sqrt{\text{mcap}}$, ESTU fit, residual applied to all.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item $\gamma_t$: mean \textbf{0.0320} (min $-0.0177$, max $0.1146$)
+      \item Weighted orthogonality: $\mathbf{1.2041\times10^{-17}}$ (target $<10^{-10}$); residual non-null on all \textbf{1{,}606{,}079} rows
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 6 --- Standardisation}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] CW mean 0 (ESTU), EW std 1 (ESTU), applied to all stocks.
+  \item[Implementation] Standard shared machinery on the orthogonalised values.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item CW mean: \textbf{0.000000}; EW std: \textbf{1.000000}
+      \item Fraction in $[\pm3]$: all \textbf{86.6\%} / ESTU \textbf{97.3\%}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 7 --- Save}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Parquet deliverable with asserted schema.
+  \item[Implementation] zstd; dtype + read-back assertions.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Rows \textbf{1{,}606{,}079}; dates \textbf{330}; tickers \textbf{15{,}809}; \textbf{31.5 MB}
+      \item Schema check \PASS{PASSED}; read-back \PASS{PASSED}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Validation Checks}
+
+All checks passed on the run dated 2026-06-11. Coverage (check 3) is evaluated
+on completed months only --- the final in-progress signal date is excluded
+(shared convention across all factor builds).
+
+\begin{table}[h!]
+\centering
+\caption{Validation results --- run date 2026-06-11}
+\small
+\begin{tabular}{clll}
+\toprule
+\textbf{Check} & \textbf{Description} & \textbf{Observed} & \textbf{Target / Status} \\
+\midrule
+1a & Max $|\mu_{\text{CW}}(\texttt{resvol\_score})|$ & $4.58\times10^{-16}$ & $<10^{-6}$ \quad \PASS{PASS} \\
+1b & Mean EW std & $1.0000$ & $1.0\pm0.02$ \quad \PASS{PASS} \\
+2a & resvol $\geq 0$ everywhere & 0 negative & 0 \quad \PASS{PASS} \\
+2b & Median resvol & $0.08225$ & $(0.020,\,0.200)$ \quad \PASS{PASS} \\
+3 & Min coverage post-2005 (completed months) & $4{,}021$ & $\geq4{,}000$ \quad \PASS{PASS} \\
+4 & MoM Spearman $\rho$ mean & $0.9397$ & $>0.90$ \quad \PASS{PASS} \\
+5 & Q1$-$Q5 vs ESTU mkt corr & $0.3532$ & $|\text{corr}|>0.30$ \quad \PASS{PASS} \\
+6 & Disk vs memory max diff & $0.00\times10^{0}$ & $<10^{-10}$ \quad \PASS{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item \textbf{Check 3} passes with a \textbf{0.5\% margin} (4{,}021 vs 4{,}000) under the completed-months convention. The post-2005 coverage trend is secularly declining ($\approx$4{,}459 in early 2025 $\to$ 4{,}021 in May 2026) as the listed universe shrinks; expect this floor to need revisiting within a year.
+\end{itemize}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Spot Check at 2026-05-29}
+
+Aggregate diagnostics at the penultimate signal date:
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item Coverage: \textbf{4{,}021} tickers; median resvol \textbf{0.08111}
+  \item Post-trim ESTU ($n=2{,}614$): mean \textbf{0.08552}, std \textbf{0.05434}, skew \textbf{1.865}, excess kurtosis \textbf{4.457}
+\end{itemize}
+
+\NOTE{No per-ticker factor values were printed by the build notebook
+; the spot check reports aggregate statistics only.}
+
+\end{document}

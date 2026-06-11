@@ -1,0 +1,286 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{url}
+\usepackage[hidelinks,bookmarks=true,bookmarksopen=true]{hyperref}
+\usepackage{siunitx}
+\usepackage{parskip}
+
+\sisetup{group-separator={,}, detect-weight=true, detect-family=true}
+\renewcommand{\arraystretch}{1.15}
+
+\definecolor{pass}{RGB}{0,140,0}
+\definecolor{warn}{RGB}{200,120,0}
+\definecolor{fail}{RGB}{180,0,0}
+\definecolor{note}{RGB}{60,60,180}
+\definecolor{accent}{HTML}{01696F}
+\definecolor{ink}{HTML}{28251D}
+\definecolor{muted}{HTML}{7A7974}
+\definecolor{rule}{HTML}{D4D1CA}
+
+\newcommand{\PASS}[1]{\textcolor{pass}{\textbf{#1}}}
+\newcommand{\WARN}[1]{\textcolor{warn}{\textbf{#1}}}
+\newcommand{\FAIL}[1]{\textcolor{fail}{\textbf{#1}}}
+\newcommand{\NOTE}[1]{\textcolor{note}{\textit{#1}}}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}{}{0pt}{}
+  [\vspace{-2pt}\textcolor{rule}{\rule{\linewidth}{0.4pt}}]
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{ink}}{}{0pt}{}
+
+\titlespacing*{\section}{0pt}{14pt}{6pt}
+\titlespacing*{\subsection}{0pt}{10pt}{2pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{muted}use4-learning-lab --- reference run 2026-06-11}
+\fancyfoot[C]{\footnotesize\color{muted}\leftmark}
+\fancyfoot[R]{\footnotesize\color{muted}\thepage}
+
+\title{\textbf{Momentum (MOM) --- Factor Construction Audit}\\[2pt]
+\large USE4-Faithful Implementation --- \texttt{mom\_build.ipynb}\\[4pt]
+\normalsize USE4 Learning Lab --- Reference Audit}
+\author{Audit Date: 2026-06-11}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Purpose and Scope}
+
+Audits the Momentum factor: relative strength as the exponentially
+weighted mean of daily excess log returns over a 504-day window, lagged 21 days,
+with a 126-day half-life (USE4 Empirical Notes, Appendix~A).
+
+\smallskip
+\textbf{Scope.} This audit covers every pipeline stage of
+\texttt{mom\_build.ipynb} from the lab's reference run of 2026-06-11: all printed diagnostics, the
+validation battery, and the output parquet schema. All numerical values are
+verbatim from the executed notebook. The notebook generates no figures.
+
+\NOTE{Reference numbers: every value in this document comes verbatim from the lab's reference run of 2026-06-11 (Sharadar data through 2026-06-10). Your rebuild will differ in row counts and tail statistics with data vintage; distribution shapes, stability coefficients, and check outcomes should match. Treat persistent sign or order-of-magnitude differences as bugs in your build until proven otherwise.}
+
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Output Schema}
+
+The deliverable is \path{data/out/mom_use4.parquet}, written with
+\texttt{compression="zstd"}, \newline\texttt{statistics=True}.
+
+\begin{table}[h!]
+\centering
+\caption{Output schema}
+\begin{tabular}{llp{7.4cm}}
+\toprule
+\textbf{Column} & \textbf{Dtype} & \textbf{Description} \\
+\midrule
+\texttt{permaticker} & \texttt{Int64} & Sharadar permanent ticker ID \\
+\texttt{signal\_date} & \texttt{Date} & End-of-month rebalance date \\
+\texttt{in\_estu} & \texttt{Bool} & ESTU membership on \texttt{signal\_date} \\
+\texttt{mcap} & \texttt{Float64} & Market cap on \texttt{signal\_date} (cap-weighting) \\
+\texttt{mom} & \texttt{Float64} & Raw descriptor: weighted mean daily excess log return \\
+\texttt{mom\_score} & \texttt{Float64} & Final standardised exposure (the deliverable) \\
+\texttt{n\_obs} & \texttt{UInt32} & Valid observations in the window (252--504) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Shared Infrastructure}
+
+All factor builds consume the shared estimation universe
+\path{data/out/estu_monthly.parquet} (audited separately in
+\texttt{estu\_audit.tex}); the time-series builds additionally consume the
+shared daily-returns artifact (audited in \texttt{daily\_panel\_audit.tex}).
+On this run the factor-level view of the shared inputs was:
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item Signal calendar: \textbf{330 dates} (1999-01-29 $\to$ 2026-06-10)
+  \item ESTU size: mean \textbf{2{,}494}, min \textbf{1{,}791}, max \textbf{3{,}045}
+  \item Daily artifact: \textbf{38{,}997{,}999} rows, \textbf{17{,}413} tickers (1998-01-02 $\to$ 2026-06-10); loader mode \textbf{FAST} (commit-aware gate)
+  \item \texttt{\_td\_to\_sig}: \textbf{7{,}153} trading days mapped; missing-benchmark dates \textbf{0} (target $<$ 30)
+\end{itemize}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Known Deviations from PDF Spec}
+
+This section mirrors the complete NOT-IN-PDF master list from
+\texttt{mom\_spec.ipynb} (\S13.) --- every judgment call the USE4 PDFs do not
+specify, with the chosen solution and its revisit trigger. Rejected alternatives
+are documented in the guide; the four-part validity arguments (USE4 requirement
+$\to$ deviation $\to$ solution $\to$ defence) live in the pipeline-level
+register, \path{docs/deviations_register.tex}.
+
+\begin{longtable}{@{}p{0.5cm}p{3.6cm}p{6.0cm}p{3.8cm}@{}}
+\caption{NOT-IN-PDF decisions (mirrors the guide master list)}\\
+\toprule
+\textbf{\#} & \textbf{Decision} & \textbf{Chosen solution} & \textbf{Revisit when} \\
+\midrule
+\endhead
+1 & Minimum observations threshold & 252 ($\sim$1 year) & If early-date coverage is too thin or noisy \\[3pt]
+2 & Weight normalisation & Normalise by $\Sigma$w (weighted-average daily return) & If raw cumulative sum is preferred for research comparisons \\[3pt]
+3 & Risk-free rate source & Ken French daily RF (F-F Data Library) & Rarely worth changing; Ken French is the standard for academic USE4 replications \\[3pt]
+4 & Treatment of null daily returns in window & Skip nulls; exclude from both numerator and denominator & If Sharadar coverage gaps are systematic for specific names \\[3pt]
+5 & Calendar start & 1999-01-01 (match Beta/NLB) & If 1999--2000 thin-coverage dates cause downstream issues \\[3pt]
+6 & Trim bound convention & CW mean $\pm$ 3$\times$EW std (ESTU) & Consistent with standardisation; almost no empirical difference \\[3pt]
+7 & Trading-day calendar & Derived from master price panel (all dates in prices/*.parquet) & If Sharadar has gaps that cause calendar artifacts \\[3pt]
+8 & Adjusted price field & closeadj & Never use closeunadj for momentum; splits create false signals \\[3pt]
+\bottomrule
+\end{longtable}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Stage-by-Stage Audit}
+
+%──────────────────────────────────
+\subsection{Stage 1 --- Shared daily-returns artifact}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Excess returns and the ESTU cap-weighted benchmark (built and validated once in \texttt{daily\_panel\_build.ipynb}; see \texttt{daily\_panel\_audit.tex}).
+  \item[Implementation] \texttt{factor\_lib.load\_daily\_artifacts}: \texttt{daily}, ticker map, trading days, commit-aware FAST gate.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item \textbf{38{,}997{,}999} rows, \textbf{17{,}413} tickers (1998-01-02 $\to$ 2026-06-10)
+      \item Working set $\approx$1.4 GB; mode \textbf{FAST}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 2 --- Load shared ESTU}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] USE4 ESTU = MSCI USA IMI; shared \path{estu_monthly.parquet}.
+  \item[Implementation] In-ESTU members + monthly calendar; mega-cap spot checks.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item 330 dates (1999-01-29 $\to$ 2026-06-10); in-ESTU rows \textbf{822{,}918}; size mean \textbf{2{,}494}
+      \item Spot: JPM/MSFT \textbf{330} months; GOOGL \textbf{261}; AAPL \textbf{257}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 4 --- MOM estimator}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Exponentially weighted relative strength, lag excludes the most recent month.
+  \item[Implementation] Weight index over trading days $d \in [22, 525]$; $W_{\text{full}} = 151.4083$.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Panel: \textbf{1{,}798{,}883} rows, \textbf{329} dates, \textbf{16{,}052} tickers; duplicates \textbf{0}
+      \item n\_obs range 252--504; spot 2026-05-29: 4{,}941 tickers, mom median 0.00001
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 5 --- Outlier trim (3$\sigma$)}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Methodology \S2.2 trim.
+  \item[Implementation] CW mean $\pm\,3\cdot$EW std (ESTU bounds, applied to all).
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Clipped (ESTU): \textbf{13{,}342} / 785{,}125 = \textbf{1.70\%} (target 0.5--2\%)
+      \item Bounds: lo mean $-0.00370$; hi mean $0.00461$ (max $0.01201$)
+      \item Post-trim at 2026-05-29 (ESTU, $n=2{,}653$): mean 0.00041, std 0.00166, skew 0.378, kurt 1.366
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 6 --- Standardisation}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] CW mean 0 (ESTU), EW std 1 (ESTU), applied to all stocks.
+  \item[Implementation] Standard shared machinery (sigma filter aligned to the family convention on 2026-06-10).
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item CW mean: \textbf{0.000000}; EW std: \textbf{1.000000}
+      \item Fraction in $[\pm3]$: all \textbf{92.7\%} / ESTU \textbf{97.9\%}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 7 --- Save}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Parquet deliverable with asserted schema.
+  \item[Implementation] zstd; dtype + read-back assertions.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Rows \textbf{1{,}798{,}883}; dates \textbf{329} (1999-02-26 $\to$ 2026-06-10); tickers \textbf{16{,}052}; \textbf{35.0 MB}
+      \item Schema check \PASS{PASSED}; read-back \PASS{PASSED}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Validation Checks}
+
+All checks passed on the run dated 2026-06-11. Coverage (check 3) is evaluated
+on completed months only --- the final in-progress signal date is excluded
+(shared convention across all factor builds).
+
+\begin{table}[h!]
+\centering
+\caption{Validation results --- run date 2026-06-11}
+\small
+\begin{tabular}{clll}
+\toprule
+\textbf{Check} & \textbf{Description} & \textbf{Observed} & \textbf{Target / Status} \\
+\midrule
+1a & Max $|\mu_{\text{CW}}(\texttt{mom\_score})|$ & $2.66\times10^{-16}$ & $<10^{-6}$ \quad \PASS{PASS} \\
+1b & Mean EW std & $1.0000$ & $1.0\pm0.02$ \quad \PASS{PASS} \\
+2a & n\_obs $\geq$ 252 for all non-null mom & True & all rows \quad \PASS{PASS} \\
+2b & Max $|\text{mom}|$ & $0.01201$ & $<0.02$ \quad \PASS{PASS} \\
+3 & Min coverage post-2005 (completed months) & $4{,}701$ & $\geq4{,}000$ \quad \PASS{PASS} \\
+4 & MoM Spearman $\rho$ mean (ESTU) & $0.8702$ & $>0.85$ \quad \PASS{PASS} \\
+5 & Q5$-$Q1 vs mkt corr (full sample) & $-0.1775$ & $>-0.30$ \quad \PASS{PASS} \\
+5b & Q5$-$Q1 vs mkt corr (ex-crisis) & $0.0073$ & $>0.0$ \quad \PASS{PASS} \\
+6 & Disk vs memory max diff & $0.00\times10^{0}$ & $<10^{-10}$ \quad \PASS{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item \textbf{Checks 5/5b:} momentum crashes (2001, 2009, 2020) drive the negative full-sample spread/market correlation; excluding them flips the sign --- the expected signature (USE4 reports MoM stability 0.89--0.92; observed 0.8702).
+  \item \textbf{Forward-return diagnostic} (equal-weighted, ESTU): Q1 $-0.571\%$/mo $\to$ Q5 $+0.523\%$/mo; Q5$-$Q1 spread $+1.094\%$/mo ($+13.1\%$ ann.), monotone.
+\end{itemize}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Spot Check at 2026-05-29}
+
+Aggregate diagnostics at the penultimate signal date:
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item Coverage: \textbf{4{,}941} tickers; mom median \textbf{0.00001}; n\_obs median \textbf{504}
+  \item Post-trim ESTU ($n=2{,}653$): mean \textbf{0.00041}, std \textbf{0.00166}, skew \textbf{0.378}, excess kurtosis \textbf{1.366}
+\end{itemize}
+
+\NOTE{No per-ticker factor values were printed by the build notebook
+; the spot check reports aggregate statistics only.}
+
+\end{document}

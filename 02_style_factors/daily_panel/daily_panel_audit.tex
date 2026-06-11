@@ -1,0 +1,149 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{url}
+\usepackage[hidelinks,bookmarks=true,bookmarksopen=true]{hyperref}
+\usepackage{siunitx}
+\usepackage{parskip}
+
+\sisetup{group-separator={,}, detect-weight=true, detect-family=true}
+\renewcommand{\arraystretch}{1.15}
+
+\definecolor{pass}{RGB}{0,140,0}
+\definecolor{warn}{RGB}{200,120,0}
+\definecolor{fail}{RGB}{180,0,0}
+\definecolor{note}{RGB}{60,60,180}
+\definecolor{accent}{HTML}{01696F}
+\definecolor{ink}{HTML}{28251D}
+\definecolor{muted}{HTML}{7A7974}
+\definecolor{rule}{HTML}{D4D1CA}
+
+\newcommand{\PASS}[1]{\textcolor{pass}{\textbf{#1}}}
+\newcommand{\WARN}[1]{\textcolor{warn}{\textbf{#1}}}
+\newcommand{\FAIL}[1]{\textcolor{fail}{\textbf{#1}}}
+\newcommand{\NOTE}[1]{\textcolor{note}{\textit{#1}}}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}{}{0pt}{}
+  [\vspace{-2pt}\textcolor{rule}{\rule{\linewidth}{0.4pt}}]
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{ink}}{}{0pt}{}
+
+\titlespacing*{\section}{0pt}{14pt}{6pt}
+\titlespacing*{\subsection}{0pt}{10pt}{2pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{muted}use4-learning-lab --- reference run 2026-06-11}
+\fancyfoot[C]{\footnotesize\color{muted}\leftmark}
+\fancyfoot[R]{\footnotesize\color{muted}\thepage}
+
+\title{\textbf{Daily Returns Artifact --- Construction Summary}\\[2pt]
+\large Shared Time-Series Infrastructure --- \texttt{daily\_panel\_build.ipynb}\\[4pt]
+\normalsize USE4 Learning Lab --- Reference Audit}
+\author{Run Date: 2026-06-11}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Purpose and Scope}
+
+Summarises the fresh build of the shared daily panel consumed by the five
+time-series factor builds (\texttt{beta}, \texttt{mom}, \texttt{nlb},
+\texttt{nls}, \texttt{resvol}): RF-adjusted excess log returns with the ESTU
+cap-weighted excess benchmark, built once so the factor notebooks start from a
+fast, bounded parquet read. All values are verbatim from the run dated
+2026-06-11.
+
+\NOTE{Reference numbers: every value in this document comes verbatim from the lab's reference run of 2026-06-11 (Sharadar data through 2026-06-10). Your rebuild will differ in row counts and tail statistics with data vintage; distribution shapes, stability coefficients, and check outcomes should match. Treat persistent sign or order-of-magnitude differences as bugs in your build until proven otherwise.}
+
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Build Diagnostics}
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item Daily RF (Ken French): \textbf{26{,}233} days (1926-07-01 $\to$
+    2026-04-30); mean 3.01\% annualised
+  \item Prices: \textbf{39{,}015{,}418} rows, \textbf{17{,}419} tickers;
+    mode \textbf{FAST} (51.6 GB RAM avail, commit headroom 84.5 GB)
+  \item Returns after null drop: \textbf{38{,}997{,}999} rows,
+    \textbf{17{,}413} tickers; market calendar \textbf{6{,}922} trading days
+    (1998-12-02 $\to$ 2026-06-10)
+  \item FAST $\equiv$ SEQUENTIAL equivalence: \PASS{PASS} ($<10^{-12}$ on
+    returns and lagged mcap)
+  \item ESTU benchmark: \textbf{6{,}883} trading days; correlation vs broad
+    CRSP proxy \textbf{0.9333} (target $>0.90$); full-sample ann.\ vol
+    \textbf{19.5\%}; GFC peak \textbf{55.5\%}; COVID peak \textbf{69.0\%}
+    (targets $>40\%$); missing-benchmark dates \textbf{0} (target $<30$)
+\end{itemize}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Known Deviations from USE4}
+
+This section mirrors the complete NOT-IN-PDF master list from
+\texttt{daily\_panel\_spec.ipynb} (\S10.) --- every judgment call the USE4 PDFs do not
+specify, with the chosen solution and its revisit trigger. Rejected alternatives
+are documented in the guide; the four-part validity arguments (USE4 requirement
+$\to$ deviation $\to$ solution $\to$ defence) live in the pipeline-level
+register, \path{docs/deviations_register.tex}.
+
+\begin{longtable}{@{}p{0.5cm}p{3.6cm}p{6.0cm}p{3.8cm}@{}}
+\caption{NOT-IN-PDF decisions (mirrors the guide master list)}\\
+\toprule
+\textbf{\#} & \textbf{Decision} & \textbf{Chosen solution} & \textbf{Revisit when} \\
+\midrule
+\endhead
+1 & RF source & Ken French daily RF & validating against USE4 published numbers \\[3pt]
+2 & Dual-class dedup & keep highest-mcap row per (permaticker, date) & share-class-level modelling is needed \\[3pt]
+3 & Benchmark weights & \texttt{mcap\_lag} (prior day, total mcap --- Sharadar has no float) & float data is procured \\[3pt]
+4 & Memory strategy & commit-aware FAST/SEQ gate ($\geq$10$\times$ RAM and $\geq$20$\times$ commit) & hardware changes \\[3pt]
+5 & Membership mapping & owning signal date = most recent month-end $\leq$ date & intramonth membership changes matter \\[3pt]
+\bottomrule
+\end{longtable}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Artifacts Written}
+
+\begin{table}[h!]
+\centering
+\caption{Artifacts --- all in \path{data/out}, zstd, read-back asserted}
+\small
+\begin{tabular}{lrr}
+\toprule
+\textbf{File} & \textbf{Rows} & \textbf{Size} \\
+\midrule
+\texttt{daily\_returns.parquet} & $38{,}997{,}999$ & 377.9 MB \\
+\texttt{crsp\_mkt.parquet} & $6{,}922$ & 0.1 MB \\
+\texttt{estu\_mkt.parquet} & $6{,}883$ & 0.1 MB \\
+\texttt{ticker\_permaticker.parquet} & $17{,}456$ & 0.1 MB \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Freshness contract:} daily data through \textbf{2026-06-10} $\geq$ last
+ESTU signal date \textbf{2026-06-10} \PASS{PASS}. Downstream loaders
+(\texttt{factor\_lib.load\_daily\_artifacts}) fail loudly if the artifact is
+missing or stale.
+
+\end{document}

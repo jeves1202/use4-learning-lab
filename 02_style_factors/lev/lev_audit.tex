@@ -1,0 +1,290 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{url}
+\usepackage[hidelinks,bookmarks=true,bookmarksopen=true]{hyperref}
+\usepackage{siunitx}
+\usepackage{parskip}
+
+\sisetup{group-separator={,}, detect-weight=true, detect-family=true}
+\renewcommand{\arraystretch}{1.15}
+
+\definecolor{pass}{RGB}{0,140,0}
+\definecolor{warn}{RGB}{200,120,0}
+\definecolor{fail}{RGB}{180,0,0}
+\definecolor{note}{RGB}{60,60,180}
+\definecolor{accent}{HTML}{01696F}
+\definecolor{ink}{HTML}{28251D}
+\definecolor{muted}{HTML}{7A7974}
+\definecolor{rule}{HTML}{D4D1CA}
+
+\newcommand{\PASS}[1]{\textcolor{pass}{\textbf{#1}}}
+\newcommand{\WARN}[1]{\textcolor{warn}{\textbf{#1}}}
+\newcommand{\FAIL}[1]{\textcolor{fail}{\textbf{#1}}}
+\newcommand{\NOTE}[1]{\textcolor{note}{\textit{#1}}}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}{}{0pt}{}
+  [\vspace{-2pt}\textcolor{rule}{\rule{\linewidth}{0.4pt}}]
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{ink}}{}{0pt}{}
+
+\titlespacing*{\section}{0pt}{14pt}{6pt}
+\titlespacing*{\subsection}{0pt}{10pt}{2pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{muted}use4-learning-lab --- reference run 2026-06-11}
+\fancyfoot[C]{\footnotesize\color{muted}\leftmark}
+\fancyfoot[R]{\footnotesize\color{muted}\thepage}
+
+\title{\textbf{Leverage (LEV) --- Factor Construction Audit}\\[2pt]
+\large USE4-Faithful Implementation --- \texttt{lev\_build.ipynb}\\[4pt]
+\normalsize USE4 Learning Lab --- Reference Audit}
+\author{Audit Date: 2026-06-11}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Purpose and Scope}
+
+Audits the Leverage factor:
+$\mathrm{LEV} = 0.75\,\widetilde{\mathrm{MLEV}} + 0.15\,\widetilde{\mathrm{DTOA}}
++ 0.10\,\widetilde{\mathrm{BLEV}}$ (USE4 Empirical Notes, Appendix~A, p.~54),
+each sub-descriptor standardised before compositing.
+
+\smallskip
+\textbf{Scope.} This audit covers every pipeline stage of
+\texttt{lev\_build.ipynb} from the lab's reference run of 2026-06-11: all printed diagnostics, the
+validation battery, and the output parquet schema. All numerical values are
+verbatim from the executed notebook. The notebook generates no figures.
+
+\NOTE{Reference numbers: every value in this document comes verbatim from the lab's reference run of 2026-06-11 (Sharadar data through 2026-06-10). Your rebuild will differ in row counts and tail statistics with data vintage; distribution shapes, stability coefficients, and check outcomes should match. Treat persistent sign or order-of-magnitude differences as bugs in your build until proven otherwise.}
+
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Output Schema}
+
+The deliverable is \path{data/out/lev_use4.parquet}, written with
+\texttt{compression="zstd"}, \newline\texttt{statistics=True}.
+
+\begin{table}[h!]
+\centering
+\caption{Output schema}
+\begin{tabular}{llp{7.4cm}}
+\toprule
+\textbf{Column} & \textbf{Dtype} & \textbf{Description} \\
+\midrule
+\texttt{permaticker} & \texttt{Int64} & Sharadar permanent ticker ID \\
+\texttt{signal\_date} & \texttt{Date} & End-of-month rebalance date \\
+\texttt{in\_estu} & \texttt{Bool} & ESTU membership on \texttt{signal\_date} \\
+\texttt{mcap} & \texttt{Float64} & Market cap on \texttt{signal\_date} (cap-weighting) \\
+\texttt{lev} & \texttt{Float64} & Raw descriptor: weighted composite of standardised MLEV/DTOA/BLEV \\
+\texttt{lev\_score} & \texttt{Float64} & Final standardised exposure (the deliverable) \\
+\texttt{n\_obs} & \texttt{UInt32} & Count of non-null sub-descriptors (1--3) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Shared Infrastructure}
+
+All factor builds consume the shared estimation universe
+\path{data/out/estu_monthly.parquet} (audited separately in
+\texttt{estu\_audit.tex}); the time-series builds additionally consume the
+shared daily-returns artifact (audited in \texttt{daily\_panel\_audit.tex}).
+On this run the factor-level view of the shared inputs was:
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item Signal calendar: \textbf{330 dates} (1999-01-29 $\to$ 2026-06-10)
+  \item ESTU size: mean \textbf{2{,}494}, min \textbf{1{,}791}, max \textbf{3{,}045}
+\end{itemize}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Known Deviations from PDF Spec}
+
+This section mirrors the complete NOT-IN-PDF master list from
+\texttt{lev\_spec.ipynb} (\S12.) --- every judgment call the USE4 PDFs do not
+specify, with the chosen solution and its revisit trigger. Rejected alternatives
+are documented in the guide; the four-part validity arguments (USE4 requirement
+$\to$ deviation $\to$ solution $\to$ defence) live in the pipeline-level
+register, \path{docs/deviations_register.tex}.
+
+\begin{longtable}{@{}p{0.5cm}p{3.6cm}p{6.0cm}p{3.8cm}@{}}
+\caption{NOT-IN-PDF decisions (mirrors the guide master list)}\\
+\toprule
+\textbf{\#} & \textbf{Decision} & \textbf{Chosen solution} & \textbf{Revisit when} \\
+\midrule
+\endhead
+1 & Compositing order & Standardize-then-combine (sub-descriptors to unit scale before weighting) & If future USE4 docs clarify \\[3pt]
+2 & Completeness rule & n\_obs = 3 required; partial composites are null & If missing-descriptor fraction exceeds 10\% \\[3pt]
+3 & Negative BE & BLEV = null when EQUITY -- PREFEQUITY $\leq$ 0 & Never --- negative BE invalidates the formula \\[3pt]
+4 & Zero/negative ME & MLEV = null when mcap $\leq$ 0 & Never --- these are data errors \\[3pt]
+5 & DTOA > 1 & Retain; $\pm$3$\sigma$ clipping handles extremes & If DTOA > 1 fraction exceeds 10\% \\[3pt]
+6 & Sub-descriptor outlier trim & Upper-tail only for MLEV/BLEV; $\pm$3$\sigma$ for DTOA & If distributional skew is extreme \\[3pt]
+7 & PREFEQUITY null \WARN{Material} & Treat as 0 (no preferred equity) & Never --- null = absent, not unknown \\[3pt]
+8 & DEBTNC / DEBTC null & Treat as 0 (no debt of that type) & Never --- null = absent, not unknown \\[3pt]
+9 & SF1 dimension & ARQ (as-reported quarterly) & Equivalent for balance-sheet snapshots; ARQ is project standard \\[3pt]
+10 & Calendar start & 1999-01-01 & If pre-1999 ESTU coverage improves \\[3pt]
+\bottomrule
+\end{longtable}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Stage-by-Stage Audit}
+
+%──────────────────────────────────
+\subsection{Stage 1 --- SF1 ARQ balance-sheet snapshot}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Market leverage, debt-to-assets, book leverage from the latest filing.
+  \item[Implementation] ARQ \texttt{debtnc}, \texttt{debtc}, \texttt{assets}, \texttt{equity}.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item ARQ rows: \textbf{608{,}786}; \textbf{15{,}964} tickers (1999-01-04 $\to$ 2026-06-10)
+      \item Null assets \textbf{0.0\%}; null debtnc \textbf{20.3\%} (floored to 0); null equity \textbf{0.0\%}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 2 --- Load shared ESTU}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] USE4 ESTU = MSCI USA IMI; the project proxy is the shared \path{estu_monthly.parquet} deliverable.
+  \item[Implementation] Reads \path{data/out/estu_monthly.parquet}, filtered to \texttt{signal\_date} $\geq$ 1999-01-01.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Signal calendar: \textbf{330 dates} (1999-01-29 $\to$ 2026-06-10)
+      \item ESTU universe rows: \textbf{1{,}773{,}820}
+      \item ESTU size: mean \textbf{2{,}494}, min \textbf{1{,}791}, max \textbf{3{,}045}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 4 --- LEV estimator}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] $0.75\,\mathrm{MLEV} + 0.15\,\mathrm{DTOA} + 0.10\,\mathrm{BLEV}$, sub-descriptors standardised.
+  \item[Implementation] PIT join; staleness $\leq548$ days; each sub-descriptor CW-mean-0/EW-std-1 standardised on ESTU before weighting.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Panel after staleness filter: \textbf{1{,}635{,}030} rows, \textbf{15{,}703} tickers; duplicates \textbf{0}
+      \item n\_obs: 3-of-3 \textbf{93.9\%}; 2-of-3 \textbf{6.1\%}; DTOA $>1$: 1.2\%; min MLEV/BLEV $=1.0000$
+      \item Sub-descriptor CW means: $5.96\times10^{-16}$ / $1.78\times10^{-16}$ / $1.66\times10^{-16}$ (all $<10^{-6}$)
+      \item Spot 2026-05-29: \textbf{4{,}705} tickers, median lev \textbf{$-$0.1565}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 5 --- Outlier trim (3$\sigma$)}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Methodology \S2.2 trim.
+  \item[Implementation] CW mean $\pm\,3\cdot$EW std (ESTU bounds, applied to all).
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Clipped (ESTU): \textbf{21{,}342} / 786{,}655 = \textbf{2.71\%} (target 0.5--2\%)
+      \item Bounds: lo mean $-2.583$; hi mean $2.551$ (max $2.772$)
+      \item Post-trim at 2026-05-29 (ESTU, $n=2{,}595$): mean 0.167, std 0.665, skew 1.859, kurt 3.210
+    \end{itemize}
+  \item[Deviation] \WARN{ESTU clip rate 2.71\% is 0.71pp above the 0.5--2\% band --- the composite right tail (highly levered financials/utilities) is structurally heavy. Accepted and documented.}
+  \item[Status] \WARN{PARTIAL MATCH} (clip rate above band, documented)
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 6 --- Standardisation}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] CW mean 0 (ESTU), EW std 1 (ESTU), applied to all stocks.
+  \item[Implementation] Standard shared machinery.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item CW mean: \textbf{$-$0.000000}; EW std: \textbf{1.000000}
+      \item Fraction in $[\pm3]$: all \textbf{94.8\%} / ESTU \textbf{96.4\%}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 7 --- Save}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Parquet deliverable with asserted schema.
+  \item[Implementation] zstd; dtype + read-back assertions.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Rows \textbf{1{,}635{,}030}; dates \textbf{330}; tickers \textbf{15{,}703}; \textbf{19.8 MB}
+      \item Schema check \PASS{PASSED}; read-back \PASS{PASSED}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Validation Checks}
+
+All checks passed on the run dated 2026-06-11. Coverage (check 3) is evaluated
+on completed months only --- the final in-progress signal date is excluded
+(shared convention across all factor builds).
+
+\begin{table}[h!]
+\centering
+\caption{Validation results --- run date 2026-06-11}
+\small
+\begin{tabular}{clll}
+\toprule
+\textbf{Check} & \textbf{Description} & \textbf{Observed} & \textbf{Target / Status} \\
+\midrule
+1a & Max $|\mu_{\text{CW}}(\texttt{lev\_score})|$ & $3.71\times10^{-17}$ & $<10^{-6}$ \quad \PASS{PASS} \\
+1b & Mean EW std & $1.0000$ & $1.0\pm0.02$ \quad \PASS{PASS} \\
+2a & lev composite bounded & $[-0.564,\,2.772]$ & $\approx(-3,+3)$ \quad \PASS{PASS} \\
+2b & Median lev\_score (ESTU) & $-0.2582$ & $|\text{med}|<0.5$ \quad \PASS{PASS} \\
+3 & Min coverage post-2005 (completed months) & $4{,}097$ & $\geq3{,}800$ \quad \PASS{PASS} \\
+4 & MoM Spearman $\rho$ mean & $0.9908$ & $>0.92$ \quad \PASS{PASS} \\
+5 & Q1$\to$Q5 mean lev monotone & spread $1.75542$ & monotone \quad \PASS{PASS} \\
+6 & Disk vs memory max diff & $0.00\times10^{0}$ & $<10^{-10}$ \quad \PASS{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item \textbf{Check 3:} LEV uses a 3{,}800 floor (vs 4{,}000 elsewhere) --- it requires all three balance-sheet fields, the thinnest fundamental coverage.
+  \item \textbf{Check 5 quintile means:} Q1 $=-0.45334$, Q2 $=-0.44357$, Q3 $=-0.21770$, Q4 $=0.20831$, Q5 $=1.30208$.
+\end{itemize}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Spot Check at 2026-05-29}
+
+Aggregate diagnostics at the penultimate signal date:
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item Coverage: \textbf{4{,}705} tickers; median lev \textbf{$-$0.1565}
+  \item Post-trim ESTU ($n=2{,}595$): mean \textbf{0.167}, std \textbf{0.665}, skew \textbf{1.859}, excess kurtosis \textbf{3.210}
+\end{itemize}
+
+\NOTE{No per-ticker factor values were printed by the build notebook
+; the spot check reports aggregate statistics only.}
+
+\end{document}

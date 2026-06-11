@@ -1,0 +1,289 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{url}
+\usepackage[hidelinks,bookmarks=true,bookmarksopen=true]{hyperref}
+\usepackage{siunitx}
+\usepackage{parskip}
+
+\sisetup{group-separator={,}, detect-weight=true, detect-family=true}
+\renewcommand{\arraystretch}{1.15}
+
+\definecolor{pass}{RGB}{0,140,0}
+\definecolor{warn}{RGB}{200,120,0}
+\definecolor{fail}{RGB}{180,0,0}
+\definecolor{note}{RGB}{60,60,180}
+\definecolor{accent}{HTML}{01696F}
+\definecolor{ink}{HTML}{28251D}
+\definecolor{muted}{HTML}{7A7974}
+\definecolor{rule}{HTML}{D4D1CA}
+
+\newcommand{\PASS}[1]{\textcolor{pass}{\textbf{#1}}}
+\newcommand{\WARN}[1]{\textcolor{warn}{\textbf{#1}}}
+\newcommand{\FAIL}[1]{\textcolor{fail}{\textbf{#1}}}
+\newcommand{\NOTE}[1]{\textcolor{note}{\textit{#1}}}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}{}{0pt}{}
+  [\vspace{-2pt}\textcolor{rule}{\rule{\linewidth}{0.4pt}}]
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{ink}}{}{0pt}{}
+
+\titlespacing*{\section}{0pt}{14pt}{6pt}
+\titlespacing*{\subsection}{0pt}{10pt}{2pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{muted}use4-learning-lab --- reference run 2026-06-11}
+\fancyfoot[C]{\footnotesize\color{muted}\leftmark}
+\fancyfoot[R]{\footnotesize\color{muted}\thepage}
+
+\title{\textbf{Book-to-Price (BP) --- Factor Construction Audit}\\[2pt]
+\large USE4-Faithful Implementation --- \texttt{bp\_build.ipynb}\\[4pt]
+\normalsize USE4 Learning Lab --- Reference Audit}
+\author{Audit Date: 2026-06-11}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Purpose and Scope}
+
+Audits the Book-to-Price factor: $\mathrm{BP} = 1.0 \cdot \mathrm{BTOP}$,
+$\mathrm{BTOP}_{i,t} = \texttt{equity}_{i,t} / \texttt{mcap}_{i,t}$ (USE4 Empirical
+Notes, Appendix~A, p.~52) --- last reported book value of common equity (Sharadar
+SF1, ARQ) over signal-date market capitalisation.
+
+\smallskip
+\textbf{Scope.} This audit covers every pipeline stage of
+\texttt{bp\_build.ipynb} from the lab's reference run of 2026-06-11: all printed diagnostics, the
+validation battery, and the output parquet schema. All numerical values are
+verbatim from the executed notebook. The notebook generates no figures.
+
+\NOTE{Reference numbers: every value in this document comes verbatim from the lab's reference run of 2026-06-11 (Sharadar data through 2026-06-10). Your rebuild will differ in row counts and tail statistics with data vintage; distribution shapes, stability coefficients, and check outcomes should match. Treat persistent sign or order-of-magnitude differences as bugs in your build until proven otherwise.}
+
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Output Schema}
+
+The deliverable is \path{data/out/bp_use4.parquet}, written with
+\texttt{compression="zstd"}, \newline\texttt{statistics=True}.
+
+\begin{table}[h!]
+\centering
+\caption{Output schema}
+\begin{tabular}{llp{7.4cm}}
+\toprule
+\textbf{Column} & \textbf{Dtype} & \textbf{Description} \\
+\midrule
+\texttt{permaticker} & \texttt{Int64} & Sharadar permanent ticker ID \\
+\texttt{signal\_date} & \texttt{Date} & End-of-month rebalance date \\
+\texttt{in\_estu} & \texttt{Bool} & ESTU membership on \texttt{signal\_date} \\
+\texttt{mcap} & \texttt{Float64} & Market cap on \texttt{signal\_date} (cap-weighting) \\
+\texttt{btop} & \texttt{Float64} & Raw descriptor: $\text{equity}/\text{mcap}$ \\
+\texttt{btop\_score} & \texttt{Float64} & Final standardised exposure (the deliverable) \\
+\texttt{n\_obs} & \texttt{UInt32} & 1 if a valid ARQ filing within the lookback window \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Shared Infrastructure}
+
+All factor builds consume the shared estimation universe
+\path{data/out/estu_monthly.parquet} (audited separately in
+\texttt{estu\_audit.tex}); the time-series builds additionally consume the
+shared daily-returns artifact (audited in \texttt{daily\_panel\_audit.tex}).
+On this run the factor-level view of the shared inputs was:
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item Signal calendar: \textbf{330 dates} (1999-01-29 $\to$ 2026-06-10)
+  \item ESTU size: mean \textbf{2{,}494}, min \textbf{1{,}791}, max \textbf{3{,}045}
+\end{itemize}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Known Deviations from PDF Spec}
+
+This section mirrors the complete NOT-IN-PDF master list from
+\texttt{bp\_spec.ipynb} (\S13.) --- every judgment call the USE4 PDFs do not
+specify, with the chosen solution and its revisit trigger. Rejected alternatives
+are documented in the guide; the four-part validity arguments (USE4 requirement
+$\to$ deviation $\to$ solution $\to$ defence) live in the pipeline-level
+register, \path{docs/deviations_register.tex}.
+
+\begin{longtable}{@{}p{0.5cm}p{3.6cm}p{6.0cm}p{3.8cm}@{}}
+\caption{NOT-IN-PDF decisions (mirrors the guide master list)}\\
+\toprule
+\textbf{\#} & \textbf{Decision} & \textbf{Chosen solution} & \textbf{Revisit when} \\
+\midrule
+\endhead
+1 & Common equity definition \WARN{Material} & \texttt{equity} (no PREFEQUITY in Sharadar) & If a preferred equity balance-sheet field is added to data pipeline \\[3pt]
+2 & SF1 dimension & ARQ (as-reported quarterly) --- book value is a balance-sheet stock, not a flow & Never --- ARQ is always correct for balance-sheet items \\[3pt]
+3 & PIT alignment & \texttt{datekey} (filing date) as PIT constraint & If Sharadar datekey quality is suspected \\[3pt]
+4 & ME denominator source & \texttt{estu\_monthly.mcap} on signal\_date & Never --- estu\_monthly mcap is the standard source for all factors \\[3pt]
+5 & Staleness cutoff & 548 calendar days ($\sim$18 months) --- same as EYLD & If stale book values are suspected to add noise \\[3pt]
+6 & Negative BE treatment & Retain as valid negative BTOP & Only if factor is used in an application where negative book equity is meaningless \\[3pt]
+7 & Zero/missing ME & Mark BTOP as null; exclude from computation & Never --- zero or missing mcap is a data error, not a valid observation \\[3pt]
+8 & Outlier trim multiplier & 3$\sigma$ (PDF default --- appropriate here; BTOP does not have the Gaussian-distribution anomaly of SIZE) & Stage 5 \\[3pt]
+9 & MIN\_OBS threshold & 1 (binary: has valid ARQ or not) & If n\_obs proves uninformative \\[3pt]
+10 & Calendar start & 1999-01-01 & If early data quality is poor \\[3pt]
+\bottomrule
+\end{longtable}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Stage-by-Stage Audit}
+
+%──────────────────────────────────
+\subsection{Stage 1 --- SF1 ARQ fundamentals}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Last reported book value of common equity, point-in-time.
+  \item[Implementation] SF1 filtered to \texttt{dimension=\allowbreak ARQ}; \texttt{permaticker}, \texttt{datekey}, \texttt{equity}.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item ARQ rows: \textbf{608{,}786}; \textbf{15{,}964} tickers (1999-01-04 $\to$ 2026-06-10)
+      \item Null equity: \textbf{224} (0.0\%; target $<$ 10\%); negative equity: \textbf{49{,}043} rows
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 2 --- Load shared ESTU}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] USE4 ESTU = MSCI USA IMI; the project proxy is the shared \path{estu_monthly.parquet} deliverable.
+  \item[Implementation] Reads \path{data/out/estu_monthly.parquet}, filtered to \texttt{signal\_date} $\geq$ 1999-01-01.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Signal calendar: \textbf{330 dates} (1999-01-29 $\to$ 2026-06-10)
+      \item ESTU universe rows: \textbf{1{,}773{,}820}
+      \item ESTU size: mean \textbf{2{,}494}, min \textbf{1{,}791}, max \textbf{3{,}045}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 4 --- BP estimator (PIT join)}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] $\mathrm{BTOP} = $ last reported BE / current market cap.
+  \item[Implementation] \texttt{join\_asof} backward on \texttt{datekey} $\leq$ \texttt{signal\_date}; staleness $\leq 548$ days; \texttt{mcap} $> 0$ guard; \texttt{btop} $=$ \texttt{equity}/\texttt{mcap}.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Rows with SF1 hit: \textbf{1{,}643{,}446} of 1{,}773{,}820
+      \item Panel: \textbf{1{,}635{,}030} rows, \textbf{330} dates, \textbf{15{,}703} tickers; duplicates \textbf{0}
+      \item Spot 2026-05-29: \textbf{4{,}705} tickers, median btop \textbf{0.3875}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 5 --- Outlier trim (3$\sigma$)}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Trim to three standard deviations from the mean (Methodology \S2.2).
+  \item[Implementation] CW mean $\pm\,3\cdot$EW std per date (ESTU), clip applied to all stocks.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Clipped (ESTU): \textbf{11{,}644} / 817{,}361 = \textbf{1.42\%} (target 0.5--2\%)
+      \item Bounds: lo mean $-1.211$ (min $-10.064$); hi mean $1.905$ (max $10.828$)
+      \item Post-trim at 2026-05-29 (ESTU, $n=2{,}759$): mean 0.446, std 0.408, skew 0.635, kurt 0.987
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 6 --- Standardisation}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] CW mean 0 (ESTU), EW std 1 (ESTU), applied to all stocks.
+  \item[Implementation] Standard shared machinery; sigma guard $>10^{-8}$.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item CW mean: \textbf{0.000000}; EW std: \textbf{1.000000}
+      \item Fraction in $[\pm3]$: all \textbf{89.8\%} / ESTU \textbf{97.5\%}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 7 --- Save}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Parquet deliverable with asserted schema.
+  \item[Implementation] zstd; 7-column dtype assertion; read-back assertion.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item Rows \textbf{1{,}635{,}030}; dates \textbf{330}; tickers \textbf{15{,}703}; \textbf{28.2 MB}
+      \item Schema check \PASS{PASSED}; read-back \PASS{PASSED}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Validation Checks}
+
+All checks passed on the run dated 2026-06-11. Coverage (check 3) is evaluated
+on completed months only --- the final in-progress signal date is excluded
+(shared convention across all factor builds).
+
+\begin{table}[h!]
+\centering
+\caption{Validation results --- run date 2026-06-11}
+\small
+\begin{tabular}{clll}
+\toprule
+\textbf{Check} & \textbf{Description} & \textbf{Observed} & \textbf{Target / Status} \\
+\midrule
+1a & Max $|\mu_{\text{CW}}(\texttt{btop\_score})|$ & $2.21\times10^{-16}$ & $<10^{-6}$ \quad \PASS{PASS} \\
+1b & Mean EW std & $1.0000$ & $1.0\pm0.02$ \quad \PASS{PASS} \\
+2a & Median btop (ESTU, post-2005) & $0.4077$ & $[0.20,\,0.80]$ \quad \PASS{PASS} \\
+2b & Negative btop present (post-2000) & confirmed & present \quad \PASS{PASS} \\
+2c & Max btop post-trim & $10.8275$ & $<15.0$ \quad \PASS{PASS} \\
+3 & Min coverage post-2005 (completed months) & $4{,}330$ & $\geq4{,}000$ \quad \PASS{PASS} \\
+4 & MoM Spearman $\rho$ mean & $0.9773$ & $>0.97$ \quad \PASS{PASS} \\
+5 & Q1$\to$Q5 mean btop monotone & spread $1.01947$ & monotone \quad \PASS{PASS} \\
+6 & Disk vs memory max diff & $0.00\times10^{0}$ & $<10^{-10}$ \quad \PASS{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item \textbf{Check 2c:} the $<15$ bound guards against unit mismatch; the observed max 10.8275 is the legitimate 3$\sigma$ clip boundary on the widest-dispersion date.
+  \item \textbf{Check 5 quintile means:} Q1 $=0.04308$, Q2 $=0.24736$, Q3 $=0.40271$, Q4 $=0.60874$, Q5 $=1.06255$.
+\end{itemize}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Spot Check at 2026-05-29}
+
+Aggregate diagnostics at the penultimate signal date:
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item Coverage: \textbf{4{,}705} tickers; median btop \textbf{0.3875}
+  \item Post-trim ESTU ($n=2{,}759$): mean \textbf{0.446}, std \textbf{0.408}, skew \textbf{0.635}, excess kurtosis \textbf{0.987}
+\end{itemize}
+
+\NOTE{No per-ticker factor values were printed by the build notebook
+; the spot check reports aggregate statistics only.}
+
+\end{document}
