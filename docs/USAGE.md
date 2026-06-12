@@ -1,4 +1,4 @@
-# Usage
+﻿# Usage
 
 ## Setup
 
@@ -29,9 +29,10 @@ building once you tire of re-parsing CSVs.
 
 ## Order
 
-`01_estu` first, always. Then `02_style_factors` (see
-`docs/FACTOR_OVERVIEW.md` for a suggested path and the dependency edges).
-Steps 03–04 are planned; the repo updates when they land.
+`00_data_cleaning` first — every downstream step reads from `data/cleaned/`. Then
+`01_estu`, then `02_style_factors` (see `docs/FACTOR_OVERVIEW.md` for a
+suggested path and the dependency edges). Step 03 (industries) is shipped;
+step 04 (country) is planned and the repo updates when it lands.
 
 ## Conventions worth copying
 

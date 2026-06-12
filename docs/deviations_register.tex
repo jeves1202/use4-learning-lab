@@ -70,8 +70,9 @@
 \section{Purpose and Scope}
 
 This document is the centrepiece of the lab: the pipeline-level companion to the per-component
-documents (\texttt{estu\_audit.tex}, \texttt{daily\_panel\_audit.tex}, and the
-twelve \texttt{<factor>\_factor\_audit.tex} files). Those audits answer
+documents (\texttt{estu\_audit.tex}, \texttt{daily\_summary.tex}, the
+twelve style \texttt{<factor>\_factor\_audit.tex} files, and
+\texttt{industries\_factor\_audit.tex}). Those audits answer
 \emph{``was each build executed correctly?''}; this one answers
 \emph{``where does the pipeline deviate from Barra USE4, what did we decide,
 and why is that decision defensible?''}
@@ -96,21 +97,23 @@ Every component passed its full validation battery on this run.
 \texttt{estu} $\to$ \texttt{daily} $\to$
 \{\texttt{size}, \texttt{bp}, \texttt{dyld}, \texttt{eyld}, \texttt{gro},
 \texttt{lev}, \texttt{liq}, \texttt{beta}, \texttt{mom}, \texttt{resvol}\};\quad
-\texttt{beta} $\to$ \texttt{nlb};\quad \texttt{size} $\to$ \texttt{nls}.
+\texttt{beta} $\to$ \texttt{nlb};\quad \texttt{size} $\to$ \texttt{nls};\quad
+\texttt{estu} $\to$ \texttt{industries}.
 
 %──────────────────────────────────
 \subsection{The reference run}
 
-The numbers in this register come from the lab's reference run of 2026-06-11
-(Sharadar data through 2026-06-10): all fourteen builds executed sequentially in
-dependency order, every validation green. Your rebuild will differ in row counts
+The numbers in this register come from the lab's reference run of 2026-06-12
+(Sharadar data through 2026-06-10): all sixteen builds executed sequentially
+in dependency order, every validation green. Your rebuild will differ in row counts
 and tail statistics with data vintage; the structural signatures (stability
-coefficients, monotone quintiles, standardisation identities) should not.
+coefficients, monotone quintiles, standardisation identities, complete industry
+coverage) should not.
 
 %──────────────────────────────────────────────────────────────────────────────
 \section{Headline Fidelity Gaps}
 
-Four deviations are material enough to frame the whole register. All four are
+Six deviations are material enough to frame the whole register. All six are
 \emph{data-availability} gaps --- Sharadar carries no analyst estimates, no
 float shares, and no preferred-equity balance --- so each is a forced choice,
 not a methodological preference, and each carries a concrete procurement-based
@@ -130,6 +133,12 @@ revisit trigger.
     $\sqrt{\text{mcap}}$ regression weight (\S4, entry A3).
   \item \textbf{Preferred equity unavailable (PE $=0$)}, affecting BP's book
     equity and LEV's MLEV/BLEV (\S4, entry A4).
+  \item \textbf{GICS unavailable.} USE4's 60 industry factors are built on a
+    licensed taxonomy; the industry layer is a hand-engineered 55-factor scheme
+    over Sharadar's classification atoms (\S4, entry A9).
+  \item \textbf{No business-segment data.} USE4's fractional industry exposures
+    ($\sim$63\% of cap weight multi-exposed) are unbuildable; every stock gets
+    single 0/1 membership (\S4, entry A10).
 \end{enumerate}
 
 The common defence pattern: where USE4's \emph{inputs} are unobtainable, the
@@ -317,6 +326,76 @@ for EYLD and GRO in particular; both audits carry this caveat.
     economic ranges.
   \item[Revisit when] Sharadar's TTM dimension is licensed --- a direct
     cross-check of the constructed sums would then be run before switching.
+\end{description}
+
+
+%──────────────────────────────────
+\subsection{A9. GICS unavailable --- engineered 55-factor scheme \hfill \WARN{Material}}
+
+\begin{description}[style=nextline]
+  \item[USE4] 60 industry factors built on GICS --- itself a hybrid recombination
+    of GICS levels selected on economic intuition, statistical significance,
+    explanatory power, and minimum size.
+  \item[Deviation] GICS is licensed and absent from Sharadar.
+  \item[Solution] Sharadar's \texttt{industry} field (154 observed atoms, 100\%
+    ESTU coverage) as the atomic layer, aggregated by the hand-engineered,
+    version-controlled \path{industry_scheme.csv} into \textbf{55 factors}
+    targeting the published 60-list under the published \emph{criteria}.
+  \item[Validity] USE4 itself states the factor set is engineered for stability
+    and explanatory power, ``not taxonomy purity'' --- replicating the 2011
+    labels verbatim in 2026 would violate the spec's own criteria after fifteen
+    years of sector tectonics. The empirical fingerprint is sound: all 55
+    factors populated at every one of 330 dates, largest factor never exceeds
+    \textbf{14.1\%} of ESTU cap, floor violations \textbf{0}, and all six
+    mega-cap spot checks land. The scheme is a reviewable 154-row table, not
+    code.
+  \item[Revisit when] GICS (or a maintained crosswalk) is licensed --- run an
+    overlap study before switching.
+\end{description}
+
+%──────────────────────────────────
+\subsection{A10. No segment data --- single 0/1 membership \hfill \WARN{Material}}
+
+\begin{description}[style=nextline]
+  \item[USE4] Diversified firms receive fractional industry exposures from
+    business-segment assets and sales (blended 75\%/25\%, top five segments);
+    $\sim$63\% of the estimation universe by cap weight was multi-exposed.
+  \item[Deviation] SF1 carries no business-segment reporting; the fractional
+    machinery is unbuildable from public Sharadar.
+  \item[Solution] Single 0/1 membership for every stock; the raw classification
+    atom is retained as an audit column.
+  \item[Validity] Single membership is the standard academic treatment and
+    leaves the CSR identification (cap-weighted zero-sum industry constraint)
+    untouched --- exposures still sum to 1 per stock by construction. The bias
+    is named and concentrated: conglomerates, diversified financials, and
+    integrated energy are forced into one bucket each, and the affected factors
+    (Industrial Conglomerates, Consumer Finance \& DFS, Oil Gas \& Consumable
+    Fuels) are exactly where the audit flags interpretation caveats. Hand-curating
+    fractional exposures for the top conglomerates was considered and rejected:
+    a subjective, unreproducible input is worse than a documented uniform rule.
+  \item[Revisit when] Segment-level fundamentals are procured.
+\end{description}
+
+%──────────────────────────────────
+\subsection{A11. Classification is not point-in-time}
+
+\begin{description}[style=nextline]
+  \item[USE4] Classifications maintained point-in-time by MSCI's internal
+    process.
+  \item[Deviation] Sharadar TICKERS is a current snapshot --- today's label
+    applied to 1999 holdings carries mild look-ahead for reclassified or
+    pivoted companies.
+  \item[Solution] Static classification, documented; the build asserts the map
+    is static (one label per permaticker, ever), so any future PIT layer is a
+    drop-in replacement.
+  \item[Validity] Industry membership drifts at a far lower frequency than any
+    factor signal --- reclassification is a multi-year event, and the affected
+    names are a thin tail of the panel. This is the standard compromise in
+    academic work built on snapshot classifications. A genuinely point-in-time
+    path exists at zero licence cost (EDGAR 10-K header SIC codes are
+    filing-dated), so the deviation is a deferral, not a dead end.
+  \item[Revisit when] Classification drift is shown to matter (e.g., a
+    dot-com-era membership study) --- build the EDGAR PIT layer.
 \end{description}
 
 %──────────────────────────────────────────────────────────────────────────────
@@ -584,7 +663,7 @@ for EYLD and GRO in particular; both audits carry this caveat.
   \item[Deviation] Both series must be sourced.
   \item[Solution] Ken French daily RF; benchmark $=$ ESTU cap-weighted excess
     return with \texttt{mcap\_lag} weights (weight known before the return
-    accrues), built once in \texttt{daily\_panel\_build.ipynb}.
+    accrues), built once in \texttt{daily\_build.ipynb}.
   \item[Validity] Over any 252-day window the RF is nearly constant, so slope
     estimators are insensitive to the exact series --- fidelity, not
     sensitivity, motivates including it. Lagged weights remove the
@@ -594,6 +673,36 @@ for EYLD and GRO in particular; both audits carry this caveat.
     \textbf{0} missing dates.
   \item[Revisit when] Only if validating against USE4's published factor
     returns requires their exact universe.
+\end{description}
+
+
+%──────────────────────────────────
+\subsection{B14. Industry scheme engineering: floor, merges, splits}
+
+\begin{description}[style=nextline]
+  \item[USE4] ``Minimum size'' is a selection criterion; values unpublished.
+    The 60-list embeds 2011 merge/split decisions.
+  \item[Deviation] The floor values, the four thin-factor exceptions, and every
+    merge/split versus the 60-list are our calls.
+  \item[Solution] Floor: median $\geq 15$ and min $\geq 8$ ESTU members over the
+    full sample. Exceptions (4, declared): Internet \& Catalog Retail (median 6
+    --- but \$3.0T of cap: Amazon), Managed Health Care (USE4-explicit),
+    Airlines, Industrial Conglomerates. Merges: Drilling$\to$Equipment \&
+    Services; Paper$+$Forest$\to$Construction Materials; both metals factors
+    $\to$ Metals \& Mining; durables/apparel/leisure and retail consolidated;
+    telecom $2\to1$ (no wireless split in the atoms). Splits: Diversified
+    Financials and Software each split in two.
+  \item[Validity] The floor operationalises USE4's own stability criterion for a
+    $\sim$2{,}500-name universe; the exceptions are justified where member
+    counts mislead (cap weight is the relevant size for a cap-weighted
+    regression). The splits address 2026 realities USE4 could not see ---
+    Software and Diversified Financials were 107--151-median-member monsters as
+    single factors, larger than entire sectors elsewhere. Validation: \textbf{0}
+    floor violations outside the declared exceptions; all 55 factors present at
+    every date.
+  \item[Revisit when] The CSR runs --- explanatory-power and VIF screening on
+    actual factor returns replaces member counts as the selection statistic
+    (USE4's remaining two criteria, deferred honestly).
 \end{description}
 
 %──────────────────────────────────────────────────────────────────────────────
@@ -607,7 +716,7 @@ for EYLD and GRO in particular; both audits carry this caveat.
   \item[Deviation] Five time-series builds previously re-downloaded RF and
     re-loaded/sorted the $\approx$39M-row price panel independently; one OOM
     kernel death traced to concurrent commit exhaustion.
-  \item[Solution] \texttt{daily\_panel\_build.ipynb} builds the panel once
+  \item[Solution] \texttt{daily\_build.ipynb} builds the panel once
     (\textbf{38{,}997{,}999} rows, 377.9 MB zstd); factor builds load it via
     \texttt{factor\_lib.load\_daily\_artifacts} behind a commit-aware
     FAST/SEQUENTIAL gate; a FAST$\equiv$SEQUENTIAL equivalence check
@@ -715,6 +824,25 @@ for EYLD and GRO in particular; both audits carry this caveat.
     than reflexively.
 \end{description}
 
+
+%──────────────────────────────────
+\subsection{C7. Fail-loudly guard on unmapped classification atoms}
+
+\begin{description}[style=nextline]
+  \item[USE4] Not addressed (implementation concern).
+  \item[Deviation] Vendor taxonomies grow; a silent default bucket would let
+    unreviewed atoms leak into the exposure matrix.
+  \item[Solution] \texttt{industries\_build.ipynb} asserts every observed atom
+    is present in \path{industry_scheme.csv} and fails the build otherwise ---
+    taxonomy changes are reviewed, never defaulted.
+  \item[Validity] The guard fired on its first execution: three atoms
+    (Banks--Global, Drug Manufacturers--Major, Silver) exist in the full ticker
+    universe but never among ESTU members, so the ESTU-derived design worksheet
+    missed them. Each was reviewed and assigned in one line of the scheme. A
+    silent fallback would have buried exactly this class of gap.
+  \item[Revisit when] Never; the assert is the mechanism.
+\end{description}
+
 %──────────────────────────────────────────────────────────────────────────────
 \section{Consolidated Revisit Triggers}
 
@@ -732,7 +860,11 @@ A7 & SEP impossible-turnover share $>0.5\%$ & Row-level cleaning in LIQ Stage 1 
 B9, C4 & Any ESTU clip rate $>3\%$ & Switch that factor to 1\%/99\% winsorisation (NLB first candidate) \\[4pt]
 B10 & Multi-factor CSR assembled & Joint orthogonalisation in the CSR; pairwise versions remain the standalone definitions \\[4pt]
 B12, C6 & Completed-month coverage minimum breaches its floor & Lower floor with documented reason; \texttt{MIN\_OBS} relief if estimator-side \\[4pt]
-C1 & Productionising & Move shared loaders/validation helpers into a real package; update your build tooling \\
+C1 & Productionising & Move shared loaders/validation helpers into a real package \\
+A9 & GICS or crosswalk licensed & Overlap study; re-map the scheme \\[4pt]
+A10 & Segment data procured & Build fractional exposures (75/25 assets/sales) \\[4pt]
+A11 & Classification drift shown to matter & EDGAR 10-K SIC point-in-time layer \\[4pt]
+B14 & CSR running & Re-screen the industry scheme on explanatory power / VIF \\
 \bottomrule
 \end{longtable}
 
@@ -740,10 +872,12 @@ C1 & Productionising & Move shared loaders/validation helpers into a real packag
 \section{Companion Documents}
 
 Per-component evidence backing every number above: \texttt{estu\_audit.tex},
-\texttt{daily\_panel\_audit.tex}, and \texttt{<factor>\_factor\_audit.tex} in each
-factor directory --- all regenerated from the same 2026-06-11 run audited here.
-Construction rationale at spec level: \texttt{<factor>\_spec.ipynb}
-(NOT-IN-PDF master lists), \texttt{estu/estu\_spec.ipynb},
-\texttt{daily/daily\_panel\_spec.ipynb}.
+\texttt{daily\_summary.tex}, \texttt{<factor>\_factor\_audit.tex} in each style
+directory, and \texttt{industries\_factor\_audit.tex} (with the scheme itself in
+\path{03_industry_factors/industry_scheme.csv}) --- all from the same
+2026-06-12 reference run audited here.
+Construction rationale at spec level: \texttt{<factor>\_risk\_factor\_guide.ipynb}
+(NOT-IN-PDF master lists), \texttt{estu/estu\_construction\_guide.ipynb},
+\newline\texttt{daily/daily\_construction\_guide.ipynb}.
 
 \end{document}

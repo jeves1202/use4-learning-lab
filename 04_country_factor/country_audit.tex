@@ -1,0 +1,254 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath, amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage[table]{xcolor}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{url}
+\usepackage[hidelinks,bookmarks=true,bookmarksopen=true]{hyperref}
+\usepackage{siunitx}
+\usepackage{parskip}
+
+\sisetup{group-separator={,}, detect-weight=true, detect-family=true}
+\renewcommand{\arraystretch}{1.15}
+
+\definecolor{pass}{RGB}{0,140,0}
+\definecolor{warn}{RGB}{200,120,0}
+\definecolor{fail}{RGB}{180,0,0}
+\definecolor{note}{RGB}{60,60,180}
+\definecolor{accent}{HTML}{01696F}
+\definecolor{ink}{HTML}{28251D}
+\definecolor{muted}{HTML}{7A7974}
+\definecolor{rule}{HTML}{D4D1CA}
+
+\newcommand{\PASS}[1]{\textcolor{pass}{\textbf{#1}}}
+\newcommand{\WARN}[1]{\textcolor{warn}{\textbf{#1}}}
+\newcommand{\FAIL}[1]{\textcolor{fail}{\textbf{#1}}}
+\newcommand{\NOTE}[1]{\textcolor{note}{\textit{#1}}}
+
+\titleformat{\section}
+  {\normalfont\large\bfseries\color{accent}}{}{0pt}{}
+  [\vspace{-2pt}\textcolor{rule}{\rule{\linewidth}{0.4pt}}]
+
+\titleformat{\subsection}
+  {\normalfont\normalsize\bfseries\color{ink}}{}{0pt}{}
+
+\titlespacing*{\section}{0pt}{14pt}{6pt}
+\titlespacing*{\subsection}{0pt}{10pt}{2pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{muted}QuantOS internal --- 2026-06-12}
+\fancyfoot[C]{\footnotesize\color{muted}\leftmark}
+\fancyfoot[R]{\footnotesize\color{muted}\thepage}
+
+\title{\textbf{Country Factor (USA) --- Factor Construction Audit}\\[2pt]
+\large USE4-Faithful Implementation --- \texttt{build\_country.ipynb}\\[4pt]
+\normalsize QuantOS Internal Technical Document}
+\author{Audit Date: 2026-06-12}
+\date{}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Purpose and Scope}
+
+Audits the Country factor: the intercept of the USE4 cross-sectional
+regression, with unit exposure for every asset, identified by the
+cap-weighted industry constraint $\sum_j w_{jt} f_{\text{ind},j,t} = 0$ (USE4
+Methodology Notes \S2.1; Empirical Notes \S4). The build delivers the
+\textbf{anchor} (the per-date CSR regression universe with normalized
+$\sqrt{\text{mcap}}$ weights) and runs the \textbf{validation CSR} ---
+country + 55 industries + 12 styles over every usable month-transition ---
+the first end-to-end exercise of the full exposure stack.
+
+\smallskip
+\textbf{Scope.} This audit covers \texttt{build\_country.ipynb} as executed on
+2026-06-12 (the reference run; the build runs \textbf{last}, after every
+exposure build): all printed
+diagnostics, the validation battery, and both output parquet schemas. All
+numerical values are verbatim from the executed notebook. The notebook
+generates no figures. Construction rationale at spec level:
+\path{04_country_factor/country_spec.ipynb}.
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Output Schema}
+
+\textbf{Anchor (the model deliverable):} \path{data/country_use4.parquet},
+written with \texttt{compression="zstd"}, \newline\texttt{statistics=True}.
+
+\begin{table}[h!]
+\centering
+\caption{Anchor schema}
+\begin{tabular}{llp{7.4cm}}
+\toprule
+\textbf{Column} & \textbf{Dtype} & \textbf{Description} \\
+\midrule
+\texttt{permaticker} & \texttt{Int64} & Sharadar permanent ticker ID \\
+\texttt{signal\_date} & \texttt{Date} & End-of-month rebalance date \\
+\texttt{in\_estu} & \texttt{Bool} & Always True --- the anchor \emph{is} the regression universe \\
+\texttt{mcap} & \texttt{Float64} & Market cap on \texttt{signal\_date} \\
+\texttt{country} & \texttt{Float64} & Country exposure --- always exactly 1.0 \\
+\texttt{w\_reg} & \texttt{Float64} & $\sqrt{\text{mcap}}$ regression weight, normalized to sum to 1 per date \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+No \texttt{score\_source} column: the exposure is definitional, never
+estimated (guide master list \#7).
+
+\smallskip
+\textbf{Validation artifact (evidence, not a model deliverable):}
+\path{data/csr_validation_returns.parquet} --- one row per (return
+month $\times$ factor): \texttt{signal\_date}, \texttt{ret\_date},
+\texttt{factor}, \texttt{f}, \texttt{r2}, \texttt{n\_stocks}
+(\textbf{22{,}236} rows = 327 transitions $\times$ 68 factors). Kept so the
+audit's evidence is reproducible and the future CSR module has a reference
+series to reconcile against.
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Shared Infrastructure}
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item Signal calendar: \textbf{330 dates} (1999-01-29 $\to$ 2026-06-10); in-ESTU rows \textbf{822{,}918}
+  \item Daily artifact: \textbf{38{,}997{,}999} rows, \textbf{17{,}413} tickers (1998-01-02 $\to$ 2026-06-10); mode \textbf{FAST}
+  \item Style exposures: the 12 \texttt{<factor>\_use4.parquet} deliverables --- the reference run's exposure matrix was complete (stock-dates with $\geq 1$ missing style score: \textbf{0}); a from-scratch rebuild will carry complete-case drops
+  \item Industry labels: \path{industries_use4.parquet}; constraint weights: \path{industry_weights_use4.parquet} (\textbf{18{,}150} rows, \textbf{55} industries)
+\end{itemize}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Known Deviations from PDF Spec}
+
+This section mirrors the NOT-IN-PDF master list from
+\texttt{country\_construction\_guide.ipynb} (\S6). The four-part validity
+arguments live in the pipeline-level register,
+\path{docs/deviations_register.tex}.
+
+\begin{longtable}{@{}p{0.5cm}p{3.6cm}p{6.0cm}p{3.8cm}@{}}
+\caption{NOT-IN-PDF decisions (mirrors the guide master list)}\\
+\toprule
+\textbf{\#} & \textbf{Decision} & \textbf{Chosen solution} & \textbf{Revisit when} \\
+\midrule
+\endhead
+1 & Constraint implementation & Exact reparametrization, eliminating the largest-cap-weight industry per date & Never --- algebraically identical to any exact form; numerically safest divisor \\[3pt]
+2 & Regression weights & $\sqrt{\text{mcap}}$ (USE4's idio-variance model), normalized per date; shipped as \texttt{w\_reg} & If the CSR module adopts a different idio-variance model \\[3pt]
+3 & Return convention & Sum of daily excess log returns over the trading days in $(t, t{+}1]$ (day assigned by its previous trading day); partial months kept & If the CSR module standardizes differently --- reconcile against the reference series \\[3pt]
+4 & Factor-dates without coverage & Drop the style column that date, $f$ = null & Never --- dropping the date discards 60+ valid factor returns to avoid one null \\[3pt]
+5 & Eliminated industry & argmax cap weight per date & Never --- exact algebra either way \\[3pt]
+6 & Validation artifact & \path{csr_validation_returns.parquet} saved as audit evidence, not a model deliverable & When the CSR module ships its own factor returns --- keep for reconciliation, then retire \\[3pt]
+7 & No \texttt{score\_source} & Anchor carries none --- exposure is definitional & Never --- would imply an estimator exists \\[3pt]
+8 & Unclassifiable stocks & \texttt{UNASSIGNED (fallback ladder)} rows dropped from the CSR sample, gated $\leq 50$ & If the unassigned population grows past the gate \\[3pt]
+9 & RF publication lag & Transitions with no excess returns skipped ($\leq 3$, tail only); picked up on the next data refresh & Never --- mixing raw and excess returns in one series is worse than a short tail \\
+\bottomrule
+\end{longtable}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Stage-by-Stage Audit}
+
+%──────────────────────────────────
+\subsection{Stage 1 --- Anchor}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Every asset has unit exposure to the country factor; WLS weights $\propto \sqrt{\text{mcap}}$.
+  \item[Implementation] In-ESTU universe ($\geq$ 1999-01-01) + \texttt{country} $= 1.0$ + per-date-normalized $\sqrt{\text{mcap}}$ weights.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item \textbf{822{,}918} rows, \textbf{330} dates; duplicates \textbf{0}; max $|\Sigma\, w_{\text{reg}} - 1|$ per date $= 2.22\times10^{-16}$
+      \item \textbf{9.5 MB}; schema check \PASS{PASSED}; read-back \PASS{PASSED}
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 2 --- Monthly returns}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Factor returns estimated from one-month asset returns against exposures known at the month start.
+  \item[Implementation] Daily excess log returns summed over $(t, t{+}1]$ (each trading day assigned by its previous trading day, so exposures at $t$ strictly precede every return they explain); benchmark compounded identically.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item \textbf{1{,}778{,}631} stock-months; benchmark \textbf{329} months (1999-01-29 $\to$ 2026-05-29)
+      \item Final window (2026-05-29 $\to$ 2026-06-10) is the short in-progress month
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────
+\subsection{Stage 4 --- Validation CSR}
+
+\begin{description}[style=nextline]
+  \item[PDF SPEC] Constrained cross-sectional WLS: country + industries + styles, $\sum_j w_j f_{\text{ind},j} = 0$.
+  \item[Implementation] Exact reparametrization per transition (largest-weight industry eliminated); $\sqrt{v}$-scaled \texttt{lstsq}; style columns without coverage dropped per date; \texttt{UNASSIGNED} stocks excluded.
+  \item[Observed]\phantom{x}
+    \begin{itemize}[nosep, topsep=-\parskip]
+      \item \textbf{327} transitions run (2 skipped: the RF-lag tail, 2026-04-30 and 2026-05-29 starts); \textbf{22{,}236} factor-return rows
+      \item Dropped factor-dates: \textbf{9} --- gro/beta/nlb $\times$ the first three 1999 dates (annual-data and benchmark warm-ups)
+      \item CSR sample sizes: min \textbf{1{,}791}, median \textbf{2{,}565}, max \textbf{3{,}043}; UNASSIGNED drops \textbf{5}
+      \item Constraint pivot frequency led by Banks (113), Pharmaceuticals (56), Software--Infrastructure \& Gaming (42)
+    \end{itemize}
+  \item[Status] \PASS{MATCHES SPEC}
+\end{description}
+
+%──────────────────────────────────────────────────────────────────────────────
+\section{Validation Checks}
+
+All checks passed on the run dated 2026-06-12.
+
+\begin{table}[h!]
+\centering
+\caption{Validation results --- run date 2026-06-12}
+\footnotesize
+\begin{tabular}{@{}c@{\hspace{6pt}}p{5.4cm}p{4.2cm}p{3.7cm}@{}}
+\toprule
+\textbf{Check} & \textbf{Description} & \textbf{Observed} & \textbf{Target / Status} \\
+\midrule
+1 & corr($f_c$, benchmark monthly excess return) & $0.9987$ & $>0.99$ \quad \PASS{PASS} \\
+2 & Max $|\Sigma_j w_j f_{\text{ind},j}|$ over dates & $3.58\times10^{-18}$ & $<10^{-10}$ \quad \PASS{PASS} \\
+3 & Mean weighted cross-sectional $R^2$ & $0.232$ (p10 $0.134$; median $0.211$; p90 $0.356$) & $>0.15$ \quad \PASS{PASS} \\
+4 & Max condition number of the scaled design & $71.4$ & $<10^{6}$ \quad \PASS{PASS} \\
+5 & Dropped factor-dates $\subseteq$ expected early-1999 warm-ups & 9, unexpected: none & $\leq 9$ \quad \PASS{PASS} \\
+6 & Anchor integrity (rows, keys, country $\equiv$ 1, $\Sigma w$ = 1) & 822{,}918 rows = in-ESTU & all hold \quad \PASS{PASS} \\
+7a & Exposure-incomplete (complete-case) drops & 0 on the reference run & counted \quad \PASS{PASS} \\
+7b & Max monthly return-missing share & $0.33\%$ & $<2\%$ \quad \PASS{PASS} \\
+7c & UNASSIGNED-industry stock-dates dropped & 5 & $\leq 50$ \quad \PASS{PASS} \\
+8 & Skipped transitions only the RF-lag tail & 2 (2026-04-30, 2026-05-29) & $\leq 3$, tail only \quad \PASS{PASS} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{itemize}[leftmargin=*,topsep=2pt,itemsep=2pt]
+  \item \textbf{Check 1 is the USE4 signature.} $f_c$ annualized vol
+    \textbf{16.2\%} = benchmark annualized vol \textbf{16.2\%}; monthly
+    RMSE($f_c$ $-$ benchmark) \textbf{0.25pp}. USE4's Empirical Notes report
+    $\approx$ 99.9\% correlation for their country factor against their
+    estimation-universe return; this implementation reproduces the signature
+    at \textbf{0.9987} despite a different universe, taxonomy, and data
+    vendor.
+  \item \textbf{Check 7a:} the reference run's exposure matrix was complete,
+    so no stock was dropped for missing exposures; a from-scratch rebuild
+    will show complete-case drops here --- count and report the share.
+  \item \textbf{Check 5:} the dropped factor-dates are the structural
+    early-1999 warm-ups (gro's annual-data ramp; beta/nlb's benchmark
+    warm-up) --- expected and bounded.
+\end{itemize}
+
+\NOTE{The validation CSR prints aggregate statistics only; no per-ticker
+values were printed by the notebook.}
+
+\end{document}
