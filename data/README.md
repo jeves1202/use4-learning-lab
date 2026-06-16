@@ -501,22 +501,41 @@ Quick reference for which fields feed which USE4-style factors.
 | **Non-linear Size** | Same as Size — cube of standardised Size |
 | **Momentum** | SEP.closeadj (12-1 month cumulative return) |
 | **Residual Volatility** | SEP.closeadj (std dev of residuals from Beta regression) |
-| **Liquidity** | SEP.volume × SEP.close (DASTD / ATVR variants); SF1.revenue for size normalisation |
-| **Earnings Yield** | SF1.ebit (ART) / DAILY.ev, or SF1.eps (ART) / SEP.close — **predicted E/P is absent from SF1** (no analyst consensus data); trailing earnings-based proxies only |
-| **Dividend Yield** | SF1.divyield, or ACTIONS (dividend) / SEP.close |
-| **Book-to-Price** | SF1.equity (ARQ) / DAILY.marketcap — **preferred equity is absent from SF1**; `equity` already excludes it per GAAP (common + APIC + retained earnings + AOCI), but the preferred equity component cannot be broken out or verified |
-| **Leverage** | SF1.debt / SF1.assets; SF1.debtnc / SF1.equity; SF1.liabilities / SF1.equity — **preferred equity is absent**; cannot compute debt + preferred / total capital (the USE4 leverage definition) |
-| **Growth** | SF1.revenue and SF1.eps (ARY, 5-year history) — **long-term predicted earnings growth is absent from SF1** (no analyst consensus data); historical realised growth only |
+| **Liquidity** | SEP.volume / SEP.sharesbas (daily share turnover) |
+| **Earnings Yield** | SF1.netinc + SF1.depamor (TTM, ARQ) / mcap — forward E/P unavailable; see limitations below |
+| **Dividend Yield** | SF1.dps (TTM, ARQ) / SEP.closeunadj — ACTIONS used for split adjustment |
+| **Book-to-Price** | SF1.equity (ARQ, latest PIT) / mcap — preferred equity unavailable; see limitations below |
+| **Leverage** | SF1.debtnc, SF1.assets, SF1.equity (ARQ, latest PIT) — preferred equity unavailable; see limitations below |
+| **Growth** | SF1.eps, SF1.sps (ARQ, 5-year annual history) — long-term growth forecasts unavailable; see limitations below |
 | **Non-linear Beta** | Derived from Beta |
 
 ---
 
-## Common pitfalls
+## Limitations relative to USE4
 
-**Missing analyst consensus data** — SF1 contains only reported (historical) financials. Three USE4 inputs are entirely absent:
-- *Predicted earnings-to-price ratio* (Earnings Yield descriptor): no forward EPS or analyst E/P estimates. Only trailing earnings proxies (ebit/ev, eps/price) are available.
-- *Long-term predicted earnings growth* (Growth descriptor): no analyst long-term growth estimates. Only historically realised revenue and EPS growth can be computed.
-- *Preferred equity* (Leverage and Book-to-Price descriptors): SF1 does not carry a preferred equity line item. `equity` is the common-equity figure (common stock + APIC + retained earnings + AOCI) and does not allow preferred equity to be added back. The USE4 leverage definition (debt + preferred / total capital) cannot be constructed precisely from SF1 alone.
+Sharadar is a reported-financials database with no analyst estimates, no float share counts, and no licensed taxonomy data. Six structural gaps relative to the Barra USE4 spec cannot be resolved from this source alone.
+
+**Analyst estimates unavailable.** SF1 carries only historically filed numbers. Two USE4 factor descriptors depend on analyst consensus and cannot be built as specified:
+
+- *EPFWD* (forward earnings-to-price, 75% weight in EYLD): no forward EPS or analyst E/P estimates exist. The lab substitutes trailing CETOP + ETOP, renormalised to 0.60/0.40.
+- *EGRLF* (long-term predicted earnings growth, 70% weight in GRO): no analyst long-term growth forecasts. The lab proxies with trailing EGRO, giving effective weights 0.90·EGRO + 0.10·SGRO.
+
+**Total market cap only — no float adjustment.** USE4 targets 99% of *float-adjusted* cap for the ESTU and uses float-adjusted weights throughout. Sharadar provides total shares outstanding only. The lab uses total mcap consistently everywhere. For US large-caps the float fraction is typically 80–100%, so the distortion is second-order where cap weight is concentrated, but it is present.
+
+**Preferred equity balance unavailable.** SF1 has no preferred equity line item on the balance sheet (only `prefdivis` on the income statement). This affects two factors:
+
+- *BP*: book equity should be common equity (total equity minus preferred equity). The lab uses `equity` directly; for the rare firms with material preferred stock the BE is slightly overstated.
+- *LEV* (MLEV and BLEV): the USE4 definition adds preferred equity to the numerators. The lab omits it. `debtnc` null is treated as zero (no debt of that type), which is correct for ~80% of rows.
+
+**No licensed taxonomy — engineered 55-factor industry scheme.** USE4's 60 industry factors are built on GICS, which is licensed and absent from Sharadar. The lab uses Sharadar's `industry` field (154 observed atoms, version-controlled in `03_industry_factors/industry_scheme.csv`) aggregated into 55 factors targeting USE4's published design criteria. This is not taxonomy purity — it is an engineered approximation that should be re-screened against explanatory power when the cross-sectional regression is assembled.
+
+**No business-segment data — single 0/1 industry membership.** USE4 assigns fractional industry exposures from business-segment filings (~63% of ESTU cap weight was multi-exposed in 2011). SF1 carries no segment reporting. Every stock gets a single integer membership. Conglomerates, diversified financials, and integrated energy are the concentrated cases.
+
+**Industry classification is not point-in-time.** Sharadar TICKERS is a current-snapshot file — today's `industry` label is applied to the full history of each permaticker. Genuine reclassifications (e.g., a company pivoting from retail to technology over several years) carry mild look-ahead. A point-in-time path exists via EDGAR 10-K header SIC codes but has not been built.
+
+---
+
+## Common pitfalls
 
 **Look-ahead bias** — always filter `SF1.datekey <= signal_date`. The filing date (datekey in AR* dims) is typically 30–90 days after the fiscal period ends, so using `calendardate` or `reportperiod` as your cutoff will leak future information.
 
