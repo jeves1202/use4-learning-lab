@@ -11,7 +11,7 @@ Audits the industry-factor exposure layer: USE4 specifies 60 GICS-based industry
 
 **Scope.** This audit covers every pipeline stage of `industries_build.ipynb` as executed on 2026-06-11: all printed diagnostics, the 8-check validation battery, and the output parquet schema. All numerical values are verbatim from the executed notebook. The notebook generates no figures.
 
-> *Reference numbers: every value in this document comes verbatim from the lab's reference run of 2026-06-11 (Sharadar data through 2026-06-10). Your rebuild will differ in row counts with data vintage; the structural results (55 factors present every date, zero floor violations, spot checks) should match exactly.*
+> *Reference numbers: every value in this document comes verbatim from the lab's reference run of 2026-06-11 (Sharadar data through 2026-06-10). Your rebuild will differ in row counts with data vintage. Your factor count will also differ from 55 if your scheme makes different merge/split decisions — that is expected and fine. The structural properties that should hold regardless: zero floor violations (or declared exceptions), 100% atom coverage, zero in-ESTU UNASSIGNED, static map integrity.*
 
 ---
 

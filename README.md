@@ -81,7 +81,7 @@ The repo is organized in **numbered steps** — do them in order.
                               #   extract after your second time-series factor
   ...
 
-03_industry_factors/          # STEP 3 — 55-factor industry scheme (shipped)
+03_industry_factors/          # STEP 3 — industry factor exposures (you design the scheme)
 04_country_factor/            # STEP 4 — the market intercept + constraint (shipped; runs last)
 
 common/                       # your shared utilities (you create this as you go)
@@ -100,7 +100,7 @@ correct output looked like on our run.
 | 00 Data cleaning | Sharadar CSV → parquet cleaning pipeline | planned — repo updates when built |
 | 01 ESTU | spec + reference audit | **shipped** |
 | 02 Style factors | 12 specs + reference audits + daily-panel refactor module | **shipped** |
-| 03 Industry factors | spec + 154-atom scheme + reference audit | **shipped** |
+| 03 Industry factors | spec + reference audit (scheme design is yours) | **shipped** |
 | 04 Country factor | spec + reference audit (anchor + validation CSR — runs last) | **shipped** |
 
 Specs and audits ship from a living research pipeline; expect occasional
@@ -122,9 +122,9 @@ Then build in this order:
 5. **`00` — Data cleaning.** Parse raw Sharadar CSVs into parquet. Everything downstream depends on this.
 2. **`01` — ESTU.** The estimation universe is the foundation. Don't build factors on top of a junk universe.
 3. **`02` — Size, Beta, BP (first three style factors).** Size is conceptually simple and upstream of Non-linear Size. Beta introduces the time-series pattern (rolling regression on excess returns) you'll reuse for Momentum, Residual Volatility, NLB, and NLS. BP is the first fundamentals-based factor — it forces you to wrestle with point-in-time joins and how to handle negatives.
-4. **`01.5` — Daily returns panel.** By this point you've written the price-loading and return-computation logic two or three times. Extract it here so the remaining time-series factors load a single parquet instead of reimplementing the same pipeline. Build this after Beta and BP, not before.
+4. **`01.5` — Daily returns panel.** By this point you've written the price-loading and return-computation logic two or three times. Extract it here so the remaining time-series factors load a single parquet instead of reimplementing the same pipeline. Build this after Beta and BP, not before. I suggest going back and importing these outputs into the previously built factors for ease of future pipeline.
 5. **`02` — Remaining style factors** (EYLD, DYLD, LEV, LIQ, GRO, MOM, RESVOL, NLS, NLB). Order within this group is flexible; the specs note any inter-factor dependencies.
-6. **`03` — Industry factors.** Unit-exposure dummies across the 55-factor scheme. Build after you have the style factors working so you understand the cross-sectional regression context these live in.
+6. **`03` — Industry factors.** Unit-exposure dummies; you design the scheme that maps Sharadar's ~150 classification atoms to factors (targeting somewhat fewer than USE4's 60, for reasons the spec explains). Build after you have the style factors working so you understand the cross-sectional regression context these live in.
 7. **`04` — Country factor.** The market intercept with cap-weighted zero-sum industry constraint. Runs last because it depends on both the style and industry factor exposures.
 
 ---

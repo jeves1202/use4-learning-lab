@@ -280,66 +280,53 @@ The 55 industry factors absorb common return variation correlated across stocks 
 
 This constraint identifies the 55 industry factor returns relative to the market (the Country factor absorbs the market-level return; industry factors describe only industry-relative performance). Implementation: exact reparametrization — eliminate the largest-cap-weight industry at each date (most numerically stable choice), express its factor return as the cap-weighted linear combination of the other 54, and solve the reduced WLS system. See the Country factor section below.
 
-### Why 55 factors, not 60
+### Why somewhat fewer than 60 factors
 
 USE4's 60-factor GICS-based scheme was engineered for the 2011 market. Sector tectonics since then are non-trivial: software and internet names are an order of magnitude larger by market cap; coal, paper, and department stores have hollowed out. A modern rebuild **should not reproduce the 2011 60-list verbatim even where it could** — the published selection criteria (economic intuition, statistical significance, explanatory power, minimum size) matter more than the specific labels.
 
-The factors were engineered from Sharadar's `industry` field (151 observed atoms in the full ticker universe, Morningstar-style taxonomy, 100% ESTU coverage) aggregated by the hand-engineered `industry_scheme.csv` into 55 factors. The alternative fields (`famaindustry`, `sicsector`) were evaluated and rejected: FF48's "Business Services" holds 328 members (far too coarse); SIC's technology granularity is 1980s-vintage and misses modern software distinctions entirely.
+The atom layer comes from Sharadar's `industry` field in TICKERS (~150 Morningstar-style labels, 100% ESTU coverage). The alternative fields were evaluated and rejected: FF48's "Business Services" holds hundreds of ESTU members (far too coarse); SIC granularity reflects the 1980s economy. From these atoms you design a scheme targeting somewhat fewer than 60 factors — the right number is determined by applying USE4's own criteria to the current universe, not by hitting a specific count.
+
+A reasonable target is **50–58 factors**. The gap from 60 comes from two structural sources: some USE4 GICS categories simply do not have separable Sharadar atoms (merges are forced), and some 2011-era categories have since hollowed out below the viability floor. These must be merged. Conversely, some 2011 single-factor categories have grown large enough that splitting them better serves the model — a 100+ member factor conflating two distinct business models is harder to estimate and interpret than two 50-member factors.
 
 ### Minimum-size floor
 
-USE4 states that thin industries are avoided because they produce unstable estimates, but gives no specific floor values. The floor chosen: **median ≥ 15 and minimum ≥ 8 ESTU members over the full 1999–2026 sample**. With approximately 2,500 ESTU members and 55 factors, this averages roughly 45 members per factor. Four declared exceptions are kept despite the floor:
+USE4 states that thin industries are avoided because they produce unstable estimates, but gives no specific floor values. A reasonable starting point: **median ≥ 15 and minimum ≥ 8 ESTU members over the full sample**. With approximately 2,500 ESTU members across ~55 factors this averages roughly 45 members per factor.
 
-| Exception | Justification |
-|---|---|
-| Internet & Catalog Retail | ~6 median members, but ~$3T of cap (Amazon dominates); cap weight is the relevant size for a cap-weighted regression |
-| Managed Health Care | Explicitly separated in the USE4 2011 list; economically distinct from other health insurance lines |
-| Airlines | Cyclically important, economically coherent sector; small member count reflects consolidation, not classification noise |
-| Industrial Conglomerates | Single-membership forces multi-industry names here; the bucket is conceptually coherent even if small |
+Some factors are worth keeping despite thin membership — cap weight is the relevant size for a cap-weighted regression, not headcount. A factor carrying a trillion dollars of cap with a handful of names is not thin in any economically meaningful sense. Document any such exceptions explicitly in your scheme and report their member stats in the validation output.
 
-### Merges relative to USE4's 60-list
+### Merges and splits relative to USE4's 60-list
 
-Several USE4 2011 factors were merged because the underlying Sharadar atoms do not support a clean split, or because the combined member count falls below the floor:
+The design exercise is applying USE4's four criteria (economic intuition, statistical significance, explanatory power, minimum size) to your atom inventory.
 
-- **Drilling → Equipment & Services**: insufficient Sharadar granularity to cleanly separate Oil Drilling from broader Oilfield Services
-- **Paper + Forest → Construction Materials**: both sectors hollowed out post-2011; combined member counts remain viable
-- **Both metals factors → Metals & Mining**: Gold/Silver/Diversified Metals collapsed into one factor; member counts support only one metals factor at the floor
-- **Durables/Apparel/Leisure consolidated**: three thin USE4 factors combined into one consumer goods manufacturing factor
-- **Retail consolidated**: specialty retail sub-types combined; single membership limitation makes fine retail distinctions spurious
-- **Telecom 2→1**: no wireless/wireline split available in Sharadar atoms; one Telecommunications factor
+**Merges** arise when: the atom granularity doesn't cleanly separate two USE4 categories; one or both sides fall below the floor; or a sector has hollowed out since 2011 and thin atoms are better combined.
 
-### Splits relative to USE4's 60-list
+**Splits** arise when: a single USE4 2011 category has become large enough by 2026 to conflate economically distinct business models; and both halves of the split clear the floor independently.
 
-Two USE4 2011 factors were split because they became enormous relative to the rest of the scheme — a 150-member factor has the same degrees of freedom in the WLS as a 15-member factor, but economically these large factors conflated distinct business models:
-
-- **Diversified Financials → Capital Markets & Asset Management / Consumer Finance & DFS**: asset managers and broker-dealers versus consumer lenders and digital financial services — distinct return dynamics
-- **Software → Application Software / Infrastructure & Gaming**: enterprise application software versus systems/infrastructure and gaming — distinct revenue model, customer base, and macro sensitivities
-
-These splits address 2026 realities USE4 could not anticipate in 2011, when these categories were smaller. The criteria applied are USE4's own: economic intuition, statistical significance, explanatory power, and minimum size.
+The specific decisions are yours to make based on the atom inventory and member counts you observe. The reference audit documents what the lab's scheme produced; your scheme may reasonably differ.
 
 ### Classification limitations
 
-**GICS absent (deviations register A9).** GICS (Global Industry Classification Standard) is licensed and unavailable from Sharadar. The 55-factor scheme approximates USE4's 60-factor GICS-based list using Sharadar's Morningstar-style `industry` atoms. The fail-loudly guard (deviations register C7) ensures any new atom introduced by a vendor taxonomy update causes an explicit build failure rather than a silent default bucket.
+**GICS absent.** GICS (Global Industry Classification Standard) is licensed and unavailable from Sharadar. Your scheme approximates USE4's 60-factor GICS-based list using Sharadar's Morningstar-style `industry` atoms. The fail-loudly guard ensures any new atom introduced by a vendor taxonomy update causes an explicit build failure rather than a silent default bucket.
 
-**No segment data — single 0/1 membership (deviations register A10).** USE4 reports that approximately 63% of the estimation universe by cap weight had multiple (fractional) industry exposures, derived from business-segment reporting via cross-sectional regressions on segment assets and sales. Sharadar carries no business-segment data; the fractional machinery is unbuildable. Every stock receives a single 0/1 membership. The bias concentrates in conglomerates, diversified financials, and integrated energy. Hand-curating fractional exposures for known conglomerates was considered and rejected: a subjective, unreproducible input is worse than a documented uniform rule.
+**No segment data — single 0/1 membership.** USE4 reports that approximately 63% of the estimation universe by cap weight had multiple (fractional) industry exposures, derived from business-segment reporting via cross-sectional regressions on segment assets and sales. Sharadar carries no business-segment data; the fractional machinery is unbuildable. Every stock receives a single 0/1 membership. The bias concentrates in conglomerates, diversified financials, and integrated energy. Hand-curating fractional exposures for known conglomerates was considered and rejected: a subjective, unreproducible input is worse than a documented uniform rule.
 
-**Classification not point-in-time (deviations register A11).** Sharadar TICKERS is a current snapshot — today's label applied retroactively to a firm that reclassified in 2015 introduces mild look-ahead for that firm around the reclassification event. Industry membership drifts at far lower frequency than any factor signal (reclassification is a multi-year event), so the error is thin and confined to names at sector boundaries. A free point-in-time path exists via EDGAR 10-K header SIC codes (filing-dated, available for the full history); it is deferred rather than unavailable.
+**Classification not point-in-time.** Sharadar TICKERS is a current snapshot — today's label applied retroactively to a firm that reclassified in 2015 introduces mild look-ahead for that firm around the reclassification event. Industry membership drifts at far lower frequency than any factor signal (reclassification is a multi-year event), so the error is thin and confined to names at sector boundaries. A free point-in-time path exists via EDGAR 10-K header SIC codes (filing-dated, available for the full history); it is deferred rather than unavailable.
 
 ### Deliverables
 
-**`data/out/industries_use4.parquet`** — one industry-factor label per stock per signal date: `permaticker`, `signal_date`, `in_estu`, `mcap`, `sharadar_industry` (raw audit column), `industry` (the factor label — one of the 55), `use4_sector`.
+**`data/out/industries_use4.parquet`** — one industry-factor label per stock per signal date: `permaticker`, `signal_date`, `in_estu`, `mcap`, `sharadar_industry` (raw audit column), `industry` (the factor label — one of your N scheme factors), `use4_sector`.
 
 **`data/out/industry_weights_use4.parquet`** — per-date industry cap-weight vector: `signal_date`, `industry`, `n_members`, `cap_weight` (industry share of total in-ESTU cap, sums to 1 per date). This is the w-vector for the cap-weighted zero-sum identification constraint; it is materialized here so the cross-sectional regression never re-derives it ad hoc.
 
 ### Validation (8-check battery)
 
 1. In-ESTU `UNASSIGNED` rows ≤ 2 at every date
-2. All 55 factors have ≥ 1 ESTU member at every date
-3. Non-exception factors: median ≥ 15 and min ≥ 8 members; the 4 exceptions reported with their stats
+2. All N factors have ≥ 1 ESTU member at every date
+3. Non-exception factors: median ≥ 15 and min ≥ 8 members; declared exceptions reported with their stats
 4. Every permaticker carries exactly one factor label (static map)
 5. Exactly one row per (permaticker, signal_date)
-6. Largest factor ≤ 30% of ESTU cap at every date (reference: 14.1% max)
-7. Six mega-cap spot checks: AAPL → Computers & Electronics; JPM → Banks; XOM → Oil Gas & Consumable Fuels; AMZN → Internet & Catalog Retail; NVDA → Semiconductors; PLD → Real Estate
+6. Largest factor ≤ 30% of ESTU cap at every date
+7. Spot checks: 5–8 large, unambiguous names whose industry is obvious from their business (you choose)
 8. Read-back equivalence between disk artifact and in-memory construction
 
 ---

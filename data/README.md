@@ -508,6 +508,8 @@ Quick reference for which fields feed which USE4-style factors.
 | **Leverage** | SF1.debtnc, SF1.assets, SF1.equity (ARQ, latest PIT) — preferred equity unavailable; see limitations below |
 | **Growth** | SF1.eps, SF1.sps (ARQ, 5-year annual history) — long-term growth forecasts unavailable; see limitations below |
 | **Non-linear Beta** | Derived from Beta |
+| **Industries (~50–58 factors)** | TICKERS.industry (~150 atoms, Morningstar-style); you design the scheme that groups these into factors. TICKERS.famaindustry and TICKERS.sicsector are alternatives but too coarse. Exposure is a single 0/1 membership per (permaticker, signal_date). TICKERS is a current snapshot — classification is not point-in-time; see limitations below |
+| **Country** | No Sharadar descriptor — exposure is always exactly 1.0 for every in-ESTU stock. The only computed quantity is the regression weight √mcap (DAILY.marketcap, normalized per date). The identifying constraint uses per-industry cap shares (total in-ESTU mcap per industry / total in-ESTU mcap), derived from the same DAILY.marketcap |
 
 ---
 
