@@ -50,27 +50,24 @@
 
 %------------------------- callout boxes --------------------------------------
 \newtcolorbox{intuition}{
-  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.4pt,
+  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.5pt,
   left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
-  borderline west={2.5pt}{0pt}{crimson},
-  fonttitle=\bfseries\color{crimson}, title={Intuition}}
+  colbacktitle=crimson, coltitle=paperlt, fonttitle=\bfseries, title={Intuition}}
 
 \newtcolorbox{pitfall}{
-  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.4pt,
+  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.5pt,
   left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
-  borderline west={2.5pt}{0pt}{amber},
-  fonttitle=\bfseries\color{amber}, title={What goes wrong}}
+  colbacktitle=amber, coltitle=paperlt, fonttitle=\bfseries, title={Pitfall}}
 
 \newtcolorbox{keyresult}{
   enhanced, breakable, colback=steel!6, colframe=steel, boxrule=0.5pt,
   left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
-  fonttitle=\bfseries\color{steel}, title={Takeaway}}
+  colbacktitle=steel, coltitle=paperlt, fonttitle=\bfseries, title={Takeaway}}
 
 \newtcolorbox{observed}{
-  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.4pt,
+  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.5pt,
   left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
-  borderline west={2.5pt}{0pt}{teal},
-  fonttitle=\bfseries\color{teal}, title={What the pipeline measured}}
+  colbacktitle=teal, coltitle=paperlt, fonttitle=\bfseries, title={Measured}}
 
 %------------------------- math operators -------------------------------------
 \DeclareMathOperator{\Var}{Var}
@@ -98,8 +95,7 @@
   \Huge\bfseries The Estimation Universe\\[0.35em]
   \large\mdseries The universe every factor is measured against\\[0.4em]
   {\color{steel}\rule{\textwidth}{0.7pt}}}
-\author{\textsc{Mathematical Finance}\\[0.2em]
-  \small Risk modelling}
+\author{}
 \date{}
 
 %------------------------- watermark footer -----------------------------------
@@ -116,13 +112,13 @@
 \thispagestyle{empty}
 
 \begin{abstract}
-The \emph{estimation universe} (ESTU) is the set of stocks on which the USE4 model is estimated --- not the (far larger) coverage universe of stocks that ultimately receive exposures and risk forecasts. It is the most quietly load-bearing object in the whole pipeline: a single ESTU sets the standardisation moments for every descriptor, the market benchmark that Beta is measured against, the sample for the cross-sectional regression that backs out factor returns, and the sample for every orthogonalisation regression. Because all four share the same set, an error here does not produce one bug; it biases every factor in a \emph{correlated} way. The awkward fact is that USE4 specifies almost no numerics for the ESTU: it adopts the MSCI USA IMI and defers the actual construction to the proprietary MSCI GIMI methodology. Our organising principle, then, is to reproduce MSCI's three \emph{published} principles --- representation, liquidity, and stability --- as three transparent screens over observable Sharadar data. This set develops those three screens one at a time, shows what the real build measured, and is honest about the one limitation (total- rather than float-adjusted market cap) that we cannot yet close.
+The \emph{estimation universe} (ESTU) is the set of stocks on which the USE4 model is estimated --- not the (far larger) coverage universe of stocks that ultimately receive exposures and risk forecasts. It is the most quietly load-bearing object in the whole pipeline: a single ESTU sets the standardisation moments for every descriptor, the market benchmark that Beta is measured against, the sample for the cross-sectional regression that backs out factor returns, and the sample for every orthogonalisation regression. Because all four share the same set, an error here does not produce one bug; it biases every factor in a \emph{correlated} way. The awkward fact is that USE4 specifies almost no numerics for the ESTU: it adopts the MSCI USA IMI and defers the actual construction to the proprietary MSCI GIMI methodology. Our organising principle, then, is to reproduce MSCI's three \emph{published} principles --- representation, liquidity, and stability --- as three transparent screens over observable Sharadar data. This set develops those three screens one at a time, shows what the real build measured, and names the one limitation (total- rather than float-adjusted market cap) it cannot yet close.
 \end{abstract}
 
 \begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
-\textbf{How to read these notes.} This is Set~2 of the library, and the first written; read it top to bottom once. The spine is simple: Section~\ref{sec:why} argues why the ESTU matters; Sections~\ref{sec:spec}--\ref{sec:gap} set up what USE4 specifies and the data gap; Sections~\ref{sec:rep}--\ref{sec:stab} build the three screens (representation, liquidity, stability), one concept per section, each independently readable; Sections~\ref{sec:run}--\ref{sec:summary} report the build and close with one honest caveat.
+\textbf{How to read these notes.} Read it top to bottom once. The spine is simple: Section~\ref{sec:why} argues why the ESTU matters; Sections~\ref{sec:spec}--\ref{sec:gap} set up what USE4 specifies and the data gap; Sections~\ref{sec:rep}--\ref{sec:stab} build the three screens (representation, liquidity, stability), one concept per section, each independently readable; Sections~\ref{sec:run}--\ref{sec:summary} report the build and close with one caveat.
 
-Four coloured boxes recur. \textcolor{crimson}{\textbf{Intuition}} gives the \emph{why} --- mental models and what an object really is. \textcolor{amber}{\textbf{What goes wrong}} shows what breaks \emph{without} the fix, usually by how an optimiser or estimator exploits the modelling error. \textcolor{steel}{\textbf{Takeaway}} flags load-bearing results to retain. \textcolor{teal}{\textbf{What the pipeline measured}} reports \emph{real} numbers from the build run and nothing else.
+Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
 
 \textbf{Reference material.}
 \begin{itemize}[nosep,leftmargin=1.4em]
@@ -280,11 +276,11 @@ Read them in order: representation defines who is even eligible, liquidity prune
 
 \textbf{Hard filters.} A name is eligible only if it is \emph{domestic common stock} --- screened on the Sharadar \emph{category} field, not on exchange --- and listed on NYSE, NASDAQ, or NYSEMKT. Filtering on exchange alone is a trap: ETFs, closed-end funds, and warrants all trade on the same major exchanges and will masquerade as common stock if you do not check category.
 
-\textbf{REITs and share classes.} The category screen deliberately admits domestic common stock \emph{including REITs}, matching MSCI USA IMI. This is a load-bearing choice, not an oversight: REITs carry unusual style exposures (heavy yield and leverage loadings, idiosyncratic interest-rate sensitivity), so including them shapes those factors materially. We keep the choice and flag the revisit trigger --- if REIT exposures are found to distort the risk model, segregate them. Separately, multiple share classes (GOOG/GOOGL, BRK.A/BRK.B) are \emph{distinct permatickers with their own mcap} and are kept separate, never consolidated --- which is why both GOOG and GOOGL can appear in the same cross-section.
+\textbf{REITs and share classes.} The category screen deliberately admits domestic common stock \emph{including REITs}, matching MSCI USA IMI. This is a load-bearing choice, not an oversight: REITs carry unusual style exposures (heavy yield and leverage loadings, idiosyncratic interest-rate sensitivity), so including them shapes those factors materially. We keep them; were REIT exposures found to distort the risk model, the remedy would be to segregate them. Separately, multiple share classes (GOOG/GOOGL, BRK.A/BRK.B) are \emph{distinct permatickers with their own mcap} and are kept separate, never consolidated --- which is why both GOOG and GOOGL can appear in the same cross-section.
 
 \textbf{Survivorship.} A stock is \emph{alive} on date $t$ if and only if it has a price row on $t$. Never filter on the \emph{current} \texttt{isdelisted} flag --- that flag reflects status today and would retroactively delete every name that ever delisted, erasing exactly the failures the model must learn from.
 
-\textbf{The mcap input.} We use \emph{total} market cap (Sharadar has no float field). This is a real gap, stated plainly here and revisited as the honest caveat in Sec.\ \ref{sec:summary}.
+\textbf{The mcap input.} We use \emph{total} market cap (Sharadar has no float field). This is a real gap, stated plainly here and revisited as the caveat in Sec.\ \ref{sec:summary}.
 
 \textbf{The cap target.} USE4 targets $99\%$ of (float-)market cap, which is naturally a \emph{cumulative-fraction} cutoff: rank by mcap, accumulate, stop at $99\%$. We approximate this with a fixed top-$N$ target (a few thousand names) for a stable, debuggable count rather than a count that floats with total market value day to day. MSCI further labels three size segments --- large, mid, small --- in roughly $70\%/15\%/14\%$ proportions of float mcap; we carry the same segment labels for reporting, but it is the cap target, not the segments, that drives inclusion.
 
@@ -448,20 +444,20 @@ Coverage admits two valid denominators. Against the \emph{retain-eligible} unive
 Check~3 hard-codes four named mega-caps and asserts their presence every eligible month. Why is that a meaningful regression test, and what class of bug would it catch that the ESTU-size-in-band check (Check~1) would miss entirely? \emph{(Hint: a join or unit bug can keep the \emph{count} perfectly in band while dropping specific large names.)}
 \end{exercise}
 
-\textbf{The market-cap floor.} The effective floor --- a low-hundreds-of-millions effective market-cap floor --- binds on essentially every date: the cap-target proxy means the smallest included name sits near the floor by construction. What \emph{drifts} across the decades is the upper tail: the $5$th and $10$th percentiles of in-ESTU mcap climb steadily as the market grows. We report this qualitatively; the absolute floor is an invented proxy constant and is deliberately not printed.
+\textbf{The market-cap floor.} The effective floor --- a low-hundreds-of-millions effective market-cap floor --- binds on essentially every date: the cap-target proxy means the smallest included name sits near the floor by construction. What \emph{drifts} across the decades is the upper tail: the $5$th and $10$th percentiles of in-ESTU mcap climb steadily as the market grows.
 
-\section{Summary, and one honest caveat}\label{sec:summary}
+\section{Summary, and one caveat}\label{sec:summary}
 
 \paragraph{Learning objectives.}
 \begin{itemize}[nosep,leftmargin=1.4em]
-  \item Reconstruct ESTU membership as a right-to-left composition of the three screens.
+  \item Reconstruct ESTU membership as the left-to-right pipeline of the three screens.
   \item State the load-bearing limitation and the concrete lever that would fix it.
 \end{itemize}
 
 \begin{intuition}
-Read membership right-to-left, as a composition:
+Read membership as a pipeline, left to right --- each screen feeds the next:
 \[
-E = \underbrace{\text{stability buffer}}_{\text{over time}}\Big(\,\underbrace{\text{cap target}}_{\approx 99\%}\big(\,\underbrace{\text{liquidity screen}}_{\text{ATVR }20/10}\big(\,\underbrace{\text{hard-filtered, PIT-alive universe}}_{\text{PIT-alive, domestic, listed}}\,\big)\big)\Big).
+\text{alive at }t \;\to\; \underbrace{\text{hard filters}}_{\text{domestic, listed}} \;\to\; \underbrace{\text{liquidity}}_{\text{ATVR }20/10} \;\to\; \underbrace{\text{cap target}}_{\approx 99\%} \;\to\; \underbrace{\text{stability buffer}}_{\text{over time}} \;\to\; E_t.
 \]
 Start from every stock alive at $t$; keep domestic common stock (REITs included) on major exchanges; prune the thinly-traded with the ATVR proxy; take the cap target to hit $\approx 99\%$ coverage; then apply the buffer across time to damp churn. Each screen does one job, and the order matters --- liquidity before the cap target, the buffer last.
 \end{intuition}
@@ -471,13 +467,13 @@ The single set $E_t$ feeds the standardisation moments, the Beta benchmark, the 
 \end{keyresult}
 
 \begin{pitfall}
-\textbf{The honest caveat.} The load-bearing limitation is \emph{total}-not-\emph{float} market cap. Total mcap inflates the effective size of founder- and insider-controlled names (a tightly-held firm looks larger and more includable than its tradeable float warrants), which biases both inclusion and cap weights, and feeds straight through to the ATVR denominator. The lever is procuring free-float data (MSCI or FactSet) and recomputing the cap target, the cap weights, and ATVR on float. Secondly, the proxy has never been validated against \emph{actual} IMI membership; the lever there is a licensed-constituent overlap study to measure where our screens and MSCI's disagree.
+\textbf{The caveat.} The load-bearing limitation is \emph{total}-not-\emph{float} market cap. Total mcap inflates the effective size of founder- and insider-controlled names (a tightly-held firm looks larger and more includable than its tradeable float warrants), which biases both inclusion and cap weights, and feeds straight through to the ATVR denominator. The lever is procuring free-float data (MSCI or FactSet) and recomputing the cap target, the cap weights, and ATVR on float. Secondly, the proxy has never been validated against \emph{actual} IMI membership; the lever there is a licensed-constituent overlap study to measure where our screens and MSCI's disagree.
 \end{pitfall}
 
 \appendix
 \section{Build pseudocode and decision table}\label{app:code}
 
-The real build defines only report-printer helpers --- there are no named math kernels --- so the pseudocode below reads as \texttt{polars} expressions over a monthly signal-date loop, not invented function calls.
+The pseudocode below reads as \texttt{polars} expressions over a monthly signal-date loop.
 
 \medskip
 \noindent\textbf{Monthly signal-date loop (point-in-time, state carried forward).}

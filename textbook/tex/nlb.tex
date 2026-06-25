@@ -1,0 +1,281 @@
+\documentclass[11pt]{article}
+
+%------------------------- fonts & encoding -----------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage[sc]{mathpazo}
+\linespread{1.06}
+\usepackage{microtype}
+
+%------------------------- layout ---------------------------------------------
+\usepackage[a4paper,margin=1.05in,marginparwidth=1.0in]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[most,breakable]{tcolorbox}
+
+%------------------------- palette --------------------------------------------
+\definecolor{crimson}{HTML}{A51C30}
+\definecolor{ink}{HTML}{1A1A1A}
+\definecolor{steel}{HTML}{2C5F8A}
+\definecolor{amber}{HTML}{9A6A00}
+\definecolor{teal}{HTML}{1F6F6B}
+\definecolor{paperlt}{HTML}{F7F4EF}
+
+%------------------------- section styling ------------------------------------
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\color{steel}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.6em}
+
+%------------------------- hyperref -------------------------------------------
+\usepackage[colorlinks=true,linkcolor=steel,citecolor=steel,urlcolor=crimson]{hyperref}
+
+%------------------------- theorem environments -------------------------------
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{exercise}{Exercise}[section]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[section]
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+%------------------------- callout boxes --------------------------------------
+\newtcolorbox{intuition}{
+  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=crimson, coltitle=paperlt, fonttitle=\bfseries, title={Intuition}}
+
+\newtcolorbox{pitfall}{
+  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=amber, coltitle=paperlt, fonttitle=\bfseries, title={Pitfall}}
+
+\newtcolorbox{keyresult}{
+  enhanced, breakable, colback=steel!6, colframe=steel, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=steel, coltitle=paperlt, fonttitle=\bfseries, title={Takeaway}}
+
+\newtcolorbox{observed}{
+  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=teal, coltitle=paperlt, fonttitle=\bfseries, title={Measured}}
+
+%------------------------- math operators -------------------------------------
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Corr}{corr}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\std}{std}
+\DeclareMathOperator*{\avg}{\mathbb{E}}
+\newcommand{\T}{^{\!\top}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\half}{\tfrac12}
+\newcommand{\wvec}{\mathbf{w}}
+\newcommand{\Xmat}{\mathbf{X}}
+\newcommand{\Fmat}{\mathbf{F}}
+\newcommand{\Vmat}{\mathbf{V}}
+\newcommand{\Umat}{\mathbf{U}}
+\newcommand{\Rmat}{\mathbf{R}}
+\newcommand{\Lam}{\boldsymbol{\Lambda}}
+\newcommand{\Del}{\boldsymbol{\Delta}}
+\newcommand{\fvec}{\mathbf{f}}
+
+%------------------------- title ----------------------------------------------
+\title{\vspace{-2.2em}
+  {\color{steel}\rule{\textwidth}{1.3pt}}\\[0.7em]
+  \Huge\bfseries Non-Linear Beta\\[0.35em]
+  \large\mdseries The curvature factor --- the cube of the beta exposure, with the linear part removed\\[0.4em]
+  {\color{steel}\rule{\textwidth}{0.7pt}}}
+\author{}
+\date{}
+
+%------------------------- watermark footer -----------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{black!45}MSCI Barra USE4 Imitation}
+\fancyfoot[R]{\footnotesize\color{black!45}\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+Non-Linear Beta is the curvature factor for market sensitivity. A plain Beta factor enters the model linearly: it assumes that risk scales with beta along a straight line, so that a stock twice as far out in beta carries twice the systematic loading. Reality can bend at the extremes -- the most aggressive and most defensive names need not lie on the line the moderate names define -- and Non-Linear Beta is the term that lets the model fit that bend. It is built as the \emph{cube} of the standardised Beta exposure, with the linear part stripped out by orthogonalising the cube back to Beta, leaving pure curvature. Because it is a deterministic transform of the Beta exposure rather than anything read from new data, Non-Linear Beta inherits Beta's coverage exactly and carries no independent information of its own; its entire job is to capture whether the beta--risk relationship curves. The cubing makes the raw quantity violently fat-tailed -- a stock three standard deviations out in beta cubes to twenty-seven -- so the factor leans heavily on its outlier trim, and it is among the least month-to-month stable in the model.
+\end{abstract}
+
+\begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
+\textbf{How to read these notes.} We move from \emph{why} a curvature term is needed to \emph{how} USE4 specifies it, then to the cube-and-orthogonalise construction (Section~\ref{sec:compute}) and to what the resulting curvature actually captures (Section~\ref{sec:curve}). Read Section~\ref{sec:compute} slowly; it carries the weight of the set. The numbers labelled as measured come from a single run of our personal build.
+
+\smallskip
+Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
+
+\smallskip
+\textbf{Reference material.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item External: Menchero, Orr \& Wang (2011), USE4 Empirical Notes (Appendix A) and Methodology Notes (Sec. 2.2--2.3).
+\end{itemize}
+\end{tcolorbox}
+
+\tableofcontents
+\bigskip
+
+\section{What Non-Linear Beta is, and why it is a factor}\label{sec:what}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Explain why a single linear Beta cannot capture a curved beta--risk relationship.
+  \item State what Non-Linear Beta adds, and that it carries no new data.
+\end{itemize}
+
+The Beta factor enters the risk model as a straight line: a stock's systematic loading is taken to be proportional to its beta exposure, so doubling the exposure doubles the loading. That is a strong assumption, and it can fail at the extremes. The most aggressive, highest-beta names and the most defensive, lowest-beta names may not sit on the line that the bulk of moderate-beta stocks trace out -- the relationship between beta and risk may \emph{curve}. A purely linear factor has no way to express that bend; it can only tilt the line, never bow it.
+
+Non-Linear Beta is the term that supplies the bow. It is constructed from the \emph{cube} of the Beta exposure, which bends sharply at the extremes, with the straight-line part removed so that what remains is pure curvature. It adds no new measurement -- it is a deterministic function of the Beta exposure the model already has -- but it gives the model a second knob on the beta dimension: not just how far out a stock sits in beta, but whether being far out matters more (or less) than a straight line would say.
+
+\begin{intuition}
+Picture the beta--risk relationship as a curve you are trying to fit. The Beta factor gives you a ruler: you can set the line's slope. Non-Linear Beta gives you a gentle bend: you can let the curve rise faster (or slower) at the two ends than in the middle. With both, the model fits an S rather than a straight line. Hold that picture -- a curvature term, not a new measurement -- and the cube below is simply the simplest shape that bends symmetrically at both ends.
+\end{intuition}
+
+\begin{keyresult}
+The Non-Linear Beta exposure is the cube of the standardised Beta exposure, orthogonalised to Beta so that only the curvature remains. Everything that follows is about that cube and that orthogonalisation.
+\end{keyresult}
+
+\section*{Notation}
+\addcontentsline{toc}{section}{Notation}
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$\beta^{z}_i$ & the standardised Beta exposure of stock $i$ (the Beta factor's deliverable) \\
+$(\beta^{z}_i)^{3}$ & its cube \\
+$\gamma_t$ & per-date slope of the cube regressed on $\beta^{z}$ (the linear part removed) \\
+$n_i$ & raw NLB: the orthogonalisation residual $(\beta^{z}_i)^{3} - \gamma_t\,\beta^{z}_i$ \\
+$x_i$ & standardised NLB exposure for stock $i$ \\
+$w_i$ & cap weight of stock $i$ in the ESTU \\
+$\avg_{\text{cw}}, \std_{\text{ew}}$ & cap-weighted mean, equal-weighted standard deviation over the ESTU \\
+$Q_1,\dots,Q_5$ & quintiles of raw $n_i$ \\
+ESTU & estimation universe (MSCI USA IMI proxy) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{How USE4 defines it}\label{sec:def}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State the cube-and-orthogonalise definition and the standardisation target.
+  \item Note that NLB is a transform of the Beta exposure and inherits its coverage.
+\end{itemize}
+
+USE4 defines Non-Linear Beta as the cube of the standardised Beta exposure, orthogonalised to the Beta factor and then standardised (Menchero, Orr \& Wang 2011, Empirical Notes, App. A). Concretely: take the Beta deliverable's standardised exposure, cube it, regress the cube on the Beta exposure and keep the residual, trim that residual at three standard deviations, and standardise over the estimation universe to cap-weighted mean $0$ and equal-weighted standard deviation $1$ (Methodology Notes, Sec. 2.2--2.3).
+
+Because the only input is the Beta exposure, Non-Linear Beta is a pure transform: it reads no daily returns or fundamentals of its own, and its coverage is exactly Beta's -- a stock has an NLB score precisely when it has a Beta score. Reading the Beta exposure directly also means NLB is orthogonalised to the \emph{same} Beta factor that enters the model, which is what keeps the two from overlapping.
+
+\section{How we compute it: cube, then orthogonalise}\label{sec:compute}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Explain why the cube must be orthogonalised to Beta.
+  \item Write the residual that becomes the factor.
+\end{itemize}
+
+The construction has two steps, and the second is the one that matters. First, cube the standardised Beta exposure. Cubing is the natural way to bend symmetrically at both ends: it leaves the sign intact, barely moves the moderate middle (a beta exposure of $0.5$ cubes to $0.125$), and explodes at the extremes (an exposure of $3$ cubes to $27$). That is exactly the shape a curvature term wants.
+
+But the cube on its own is not yet a clean curvature term, because a cube is strongly correlated with the thing it cubes -- $(\beta^{z})^{3}$ rises with $\beta^{z}$, tracking it at a correlation of about $0.75$ in a typical cross-section (Figure~\ref{fig:nlb_dist}, left). Left as-is it would largely duplicate the Beta factor. So the second step removes the linear part: at each date the cube is regressed on the Beta exposure -- a no-intercept regression weighted by the square root of market cap, fit over the estimation universe -- and the \emph{residual} is kept:
+\[
+n_i \;=\; (\beta^{z}_i)^{3} \;-\; \gamma_t\,\beta^{z}_i .
+\]
+Subtracting $\gamma_t\,\beta^{z}_i$ strips out everything the straight line could explain, leaving only the bend. The residual is then trimmed and standardised. After the orthogonalisation the correlation with Beta collapses from about $0.75$ to essentially zero (Figure~\ref{fig:nlb_dist}, right), so Non-Linear Beta sits beside Beta as a genuinely separate axis rather than a second copy of it.
+
+\begin{pitfall}
+Skipping the orthogonalisation is the whole trap. A raw cube is three-quarters correlated with the linear exposure, so an un-orthogonalised ``non-linear'' factor would mostly re-measure Beta -- the model would carry two nearly-collinear beta columns and could not tell the linear loading from the curvature. The orthogonalisation is what makes the factor non-linear in substance and not just in name; it is removed on a cap-weighted basis, so the dollar-weighted linear relationship vanishes exactly while a negligible unweighted residual can remain.
+\end{pitfall}
+
+\section{Reading the curvature, and the heavy tails}\label{sec:curve}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Read the cubic-residual shape and say which stocks load high or low.
+  \item Explain why the factor is so fat-tailed and comparatively unstable.
+\end{itemize}
+
+What the orthogonalised factor looks like, as a function of beta, is the clean S-shaped curve in Figure~\ref{fig:nlb_dist} (right). It is near zero for moderate-beta stocks, swings \emph{negative} for the mildly-extreme on each side, and then rises steeply to large positive values for the very highest betas and large negative values for the very lowest -- a sign-preserving curvature that, by construction, is uncorrelated with beta itself. In plain terms, Non-Linear Beta separates the genuinely \emph{extreme}-beta names from the merely moderate ones, over and above the linear ranking Beta already provides: it is the model's handle on ``how curved'' the beta dimension is at a given date.
+
+The cubing has a sharp consequence for the distribution. Raising a standardised quantity to the third power makes the tails enormous: a stock three standard deviations out in beta contributes a cube of twenty-seven, far beyond anything a level-based descriptor produces. The raw factor is therefore violently fat-tailed, which is why the three-standard-deviation trim does more work here than for most factors, and why even the trimmed, standardised exposure stays right-skewed and heavy-tailed. And because NLB is a deterministic function of the Beta exposure, it inherits Beta's estimation noise and \emph{amplifies} it at the extremes -- a small wobble in a large beta becomes a large wobble once cubed -- so its month-to-month stability is among the lowest in the model, on a par with momentum.
+
+\begin{observed}
+On the build run the raw NLB is the orthogonalisation residual of the cubed Beta exposure: by construction it is essentially uncorrelated with Beta (cap-weighted orthogonality to machine precision before the trim; a pooled correlation near zero after). The cube makes it heavily fat-tailed, so the three-standard-deviation trim clips $\approx 2.4\%$ of ESTU rows, above the usual $0.5$--$2\%$ band. After standardisation the cap-weighted mean is $0$ to machine precision and the equal-weighted standard deviation is $1.0$, with the exposure still right-skewed (skew $\approx 1.5$) and fat-tailed (excess kurtosis $\approx 5$); $\approx 97\%$ of ESTU rows fall inside $[\pm 3]$, but only $\approx 94\%$ of all scored stocks do, since the standardisation is calibrated on the investable universe. Month-over-month rank stability is among the lowest of the style factors, Spearman $\rho \approx 0.87$, the cube amplifying Beta's own noise. The deliverable is $\approx 1.84$M scored rows over $327$ dates and $\approx 16{,}450$ tickers -- exactly Beta's coverage, as a transform must inherit.
+\end{observed}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/nlb_dist.png}
+\caption{Building Non-Linear Beta, on one in-ESTU cross-section. \emph{Left:} the raw cube of the Beta exposure still rises with beta (correlation $\approx 0.75$) -- on its own it would largely duplicate the Beta factor. \emph{Right:} after regressing the cube on Beta and keeping the residual, the linear part is gone (correlation $\approx 0$), leaving the pure cubic curvature -- near zero for moderate betas and bending sharply at the extremes. The factor is a near-deterministic curve of beta because it is a transform, not a fresh measurement.}
+\label{fig:nlb_dist}
+\end{figure}
+
+\section{Trim and standardisation}\label{sec:std}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State the order of operations and the standardisation target.
+\end{itemize}
+
+The pipeline from the Beta exposure to the deliverable is: cube, orthogonalise, trim, standardise. The orthogonality is enforced before the trim -- so it holds exactly on the untrimmed residual, and the trim that follows nudges a few extreme points and leaves only a negligible correlation with Beta behind. The trimmed residual is then standardised over the ESTU:
+\[
+x_i \;=\; \frac{\tilde n_i - \avg_{\text{cw}}(\tilde n)}{\std_{\text{ew}}(\tilde n)},
+\]
+with $\tilde n$ the trimmed residual. The cap-weighted centring and equal-weighted scaling place the curvature on the same mean-$0$, standard-deviation-$1$ footing as every other style exposure, so it can be combined with them on equal terms.
+
+\begin{exercise}
+A stock has a Beta exposure of $\beta^{z}=2.5$. Compute its cube. Then, taking the per-date slope to be roughly $\gamma_t \approx 3$, compute the orthogonalisation residual $\beta^{z\,3} - \gamma_t\beta^{z}$. Repeat for $\beta^{z}=0.5$. Which stock loads more heavily on Non-Linear Beta, and why does that match the ``extreme versus moderate'' reading?
+\end{exercise}
+
+\begin{exercise}
+Explain why the cube must be orthogonalised to Beta before it can serve as a separate factor. What goes wrong in the risk model if a factor correlated $0.75$ with Beta is added without removing the linear part?
+\end{exercise}
+
+\begin{exercise}
+Non-Linear Beta is less month-to-month stable than Beta itself ($\rho \approx 0.87$ versus $\approx 0.95$), even though it adds no new data. Explain why cubing the Beta exposure should make the resulting factor \emph{noisier} than the exposure it is built from. (Hint: think about how a small change in a large beta affects its cube.)
+\end{exercise}
+
+\section{Summary, and one caveat}\label{sec:summary}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Recite the Non-Linear Beta build from the Beta exposure to the standardised factor.
+  \item State the central limitation.
+\end{itemize}
+
+The build, end to end: take the standardised Beta exposure; cube it to bend sharply at the extremes; orthogonalise the cube to Beta -- a cap-weighted, no-intercept regression whose residual strips out the linear part -- so that only curvature remains; trim the residual at three standard deviations, which the cube's heavy tails make essential; and standardise to cap-weighted mean $0$, equal-weighted standard deviation $1$. The output is a curvature factor: uncorrelated with Beta by construction, sharply fat-tailed, and inheriting Beta's coverage exactly.
+
+\begin{keyresult}
+Non-Linear Beta is the cubic curvature of the beta dimension with the linear part removed. The one computation that matters is the orthogonalisation: without it the cube is three-quarters Beta; with it, the factor is pure non-linearity.
+\end{keyresult}
+
+\begin{pitfall}
+One honest limitation is structural. Non-Linear Beta adds no independent information -- it is a deterministic transform of the Beta exposure -- so it can only earn its place if the beta--risk relationship genuinely curves; where that relationship is close to linear, the factor is mostly amplified noise. And amplified noise is the operative phrase: cubing magnifies the estimation error already in Beta's extremes, making this the more fragile of the two and the more dependent on its trim. A second, smaller point is that the build orthogonalises NLB to Beta alone, pairwise; the fuller treatment, when all factors are estimated together, orthogonalises jointly in the cross-sectional regression. The clear levers are to lean on a well-estimated Beta (since NLB can be no better than its input) and to orthogonalise jointly in the full model rather than pairwise.
+\end{pitfall}
+
+\begin{remark}
+None of this changes the factor's place in the model: Non-Linear Beta is the curvature companion to Beta, present so the model can fit a bent beta--risk relationship rather than a straight one. The caveat is about \emph{how much} curvature there is to capture and how noisy the cube of an estimate becomes, not about whether allowing the relationship to bend is worthwhile.
+\end{remark}
+
+\begin{center}\small\itshape
+References: Menchero, Orr \& Wang (2011), \textit{The Barra US Equity Model (USE4)} --- Empirical Notes (Appendix A) and Methodology Notes (Sec. 2.2--2.3). ESTU treated as an MSCI USA IMI proxy; measured quantities are from a personal build run.
+\end{center}
+
+\end{document}

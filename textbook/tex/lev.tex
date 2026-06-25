@@ -1,0 +1,331 @@
+\documentclass[11pt]{article}
+
+%------------------------- fonts & encoding -----------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage[sc]{mathpazo}
+\linespread{1.06}
+\usepackage{microtype}
+
+%------------------------- layout ---------------------------------------------
+\usepackage[a4paper,margin=1.05in,marginparwidth=1.0in]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[most,breakable]{tcolorbox}
+
+%------------------------- palette --------------------------------------------
+\definecolor{crimson}{HTML}{A51C30}
+\definecolor{ink}{HTML}{1A1A1A}
+\definecolor{steel}{HTML}{2C5F8A}
+\definecolor{amber}{HTML}{9A6A00}
+\definecolor{teal}{HTML}{1F6F6B}
+\definecolor{paperlt}{HTML}{F7F4EF}
+
+%------------------------- section styling ------------------------------------
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\color{steel}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.6em}
+
+%------------------------- hyperref -------------------------------------------
+\usepackage[colorlinks=true,linkcolor=steel,citecolor=steel,urlcolor=crimson]{hyperref}
+
+%------------------------- theorem environments -------------------------------
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{exercise}{Exercise}[section]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[section]
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+%------------------------- callout boxes --------------------------------------
+\newtcolorbox{intuition}{
+  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=crimson, coltitle=paperlt, fonttitle=\bfseries, title={Intuition}}
+
+\newtcolorbox{pitfall}{
+  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=amber, coltitle=paperlt, fonttitle=\bfseries, title={Pitfall}}
+
+\newtcolorbox{keyresult}{
+  enhanced, breakable, colback=steel!6, colframe=steel, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=steel, coltitle=paperlt, fonttitle=\bfseries, title={Takeaway}}
+
+\newtcolorbox{observed}{
+  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=teal, coltitle=paperlt, fonttitle=\bfseries, title={Measured}}
+
+%------------------------- math operators -------------------------------------
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Corr}{corr}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\std}{std}
+\DeclareMathOperator*{\avg}{\mathbb{E}}
+\newcommand{\T}{^{\!\top}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\half}{\tfrac12}
+\newcommand{\wvec}{\mathbf{w}}
+\newcommand{\Xmat}{\mathbf{X}}
+\newcommand{\Fmat}{\mathbf{F}}
+\newcommand{\Vmat}{\mathbf{V}}
+\newcommand{\Umat}{\mathbf{U}}
+\newcommand{\Rmat}{\mathbf{R}}
+\newcommand{\Lam}{\boldsymbol{\Lambda}}
+\newcommand{\Del}{\boldsymbol{\Delta}}
+\newcommand{\fvec}{\mathbf{f}}
+
+%------------------------- title ----------------------------------------------
+\title{\vspace{-2.2em}
+  {\color{steel}\rule{\textwidth}{1.3pt}}\\[0.7em]
+  \Huge\bfseries Leverage\\[0.35em]
+  \large\mdseries The debt factor --- how much a firm leans on borrowed money, read three ways and combined on a common scale\\[0.4em]
+  {\color{steel}\rule{\textwidth}{0.7pt}}}
+\author{}
+\date{}
+
+%------------------------- watermark footer -----------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{black!45}MSCI Barra USE4 Imitation}
+\fancyfoot[R]{\footnotesize\color{black!45}\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+Leverage is the debt factor: it measures how much a firm leans on borrowed money rather than its own equity, so that heavily indebted firms load high and debt-light firms load low. USE4 builds Leverage from three leverage ratios -- market leverage, debt-to-assets, and book leverage -- combined into one descriptor, with market leverage carrying the bulk of the weight. The construction makes one methodological idea unavoidable: the three ratios live on incompatible scales, so each is standardised to a common footing \emph{before} the weights are applied -- standardise, then combine. Our personal build has no preferred-equity data, so the two equity-based ratios simply drop that term. Leverage is also shaped unlike most factors: a firm can be debt-free but not less-than-debt-free, so the cross-section piles against a low-leverage floor and trails off into a long right tail of heavily indebted names -- which makes the outlier trim effectively one-sided. Finally, because the canonical build requires all three ratios, firms with negative book equity (no defined book leverage) fall out of the factor entirely -- a coverage gap that lands precisely on the most distressed, most-levered names.
+\end{abstract}
+
+\begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
+\textbf{How to read these notes.} We move from \emph{why} Leverage is a factor to \emph{how} USE4 specifies it, then to how we actually compute the three ratios, with a deliberate stop at the step that makes the blend coherent (Section~\ref{sec:combine}) and at the unusual shape of the cross-section (Section~\ref{sec:shape}). Read those two slowly; they carry the weight of the set. The numbers labelled as measured come from a single run of our personal build.
+
+\smallskip
+Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
+
+\smallskip
+\textbf{Reference material.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item External: Menchero, Orr \& Wang (2011), USE4 Empirical Notes (Appendix A) and Methodology Notes (Sec. 2.2--2.3).
+\end{itemize}
+\end{tcolorbox}
+
+\tableofcontents
+\bigskip
+
+\section{What Leverage is, and why it is a factor}\label{sec:what}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State Leverage as the degree to which a firm is financed by debt rather than equity.
+  \item Explain why leverage is a distinct dimension of risk.
+  \item Say in one sentence what the Leverage exposure is, before any standardisation.
+\end{itemize}
+
+Leverage is about how a firm is financed. Two companies can run the same business with the same assets, yet one funds itself almost entirely with shareholders' equity and the other borrows heavily to do the same job. The borrower is \emph{levered}: its debt must be serviced in good times and bad, so a given swing in the value of its assets lands harder on the thinner sliver of equity beneath. Leverage magnifies returns on the way up and losses on the way down, and it ties the firm's fate to credit conditions, interest rates, and the risk of distress.
+
+That shared sensitivity is why leverage earns a factor. Heavily indebted firms tend to move together -- they re-rate together when credit tightens, and they are the names that suffer most in a liquidity squeeze. A risk model needs to see that common exposure directly, rather than discovering it only after a credit event. The Leverage factor measures it as a standardised blend of three complementary leverage ratios, each reading the same idea -- debt relative to value -- off a different part of the balance sheet.
+
+\begin{intuition}
+The whole factor answers one question: \emph{how much of this firm is borrowed?} A debt-free firm leans on no one; a firm whose assets are mostly funded by debt has a thin equity cushion and a fragile balance sheet. Hold that picture --- the size of the debt load relative to the firm's value --- and the three ratios below are just three honest ways of measuring it.
+\end{intuition}
+
+\begin{keyresult}
+The Leverage exposure is a standardised blend of three leverage ratios -- market leverage, debt-to-assets, and book leverage. Everything that follows is about how each ratio is defined and, crucially, how three incompatible ratios are made into one coherent number.
+\end{keyresult}
+
+\section*{Notation}
+\addcontentsline{toc}{section}{Notation}
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$\text{ME}_i$ & market equity of stock $i$ (signal-date market capitalisation) \\
+$\text{BE}_i$ & book equity of stock $i$ (book value of common equity) \\
+$\text{LD}_i$ & long-term (non-current) debt of stock $i$ \\
+$\text{TD}_i$ & total debt of stock $i$ (current $+$ non-current) \\
+$\text{TA}_i$ & total assets of stock $i$ \\
+$\text{MLEV}_i$ & market leverage, $(\text{ME}_i+\text{LD}_i)/\text{ME}_i$ \\
+$\text{DTOA}_i$ & debt-to-assets, $\text{TD}_i/\text{TA}_i$ \\
+$\text{BLEV}_i$ & book leverage, $(\text{BE}_i+\text{LD}_i)/\text{BE}_i$ \\
+$\widetilde{(\,\cdot\,)}$ & a sub-descriptor standardised over the ESTU (cap-wtd mean $0$, eq-wtd std $1$) \\
+$c_i$ & raw LEV composite, $0.75\,\widetilde{\text{MLEV}}_i+0.15\,\widetilde{\text{DTOA}}_i+0.10\,\widetilde{\text{BLEV}}_i$ \\
+$x_i$ & standardised LEV exposure for stock $i$ \\
+$w_i$ & cap weight of stock $i$ in the ESTU \\
+$\avg_{\text{cw}}, \std_{\text{ew}}$ & cap-weighted mean, equal-weighted standard deviation over the ESTU \\
+$Q_1,\dots,Q_5$ & quintiles of raw $c_i$, from least levered ($Q_1$) to most levered ($Q_5$) \\
+ESTU & estimation universe (MSCI USA IMI proxy) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{How USE4 defines it}\label{sec:def}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Name the three leverage sub-descriptors and which one is weighted most.
+  \item State that sub-descriptors are standardised \emph{before} compositing, and the final standardisation target.
+\end{itemize}
+
+USE4 builds Leverage from three sub-descriptors (Menchero, Orr \& Wang 2011, Empirical Notes, App. A): market leverage (MLEV), debt-to-assets (DTOA), and book leverage (BLEV). They are not co-equal -- market leverage carries the bulk of the blend as the dominant ingredient, with debt-to-assets and book leverage contributing the remainder. The three read the same economic idea -- borrowed money relative to firm value -- against three different denominators: the market value of equity, the book value of total assets, and the book value of equity.
+
+The defining methodological choice is the order of operations. Each sub-descriptor is first standardised over the estimation universe to cap-weighted mean $0$ and equal-weighted standard deviation $1$, and \emph{only then} are the three combined with their weights. The weighted composite is then itself trimmed at three standard deviations (Methodology Notes, Sec. 2.2) and standardised once more to cap-weighted mean $0$, equal-weighted standard deviation $1$ (Sec. 2.3). Fundamentals are aligned point-in-time by filing date, so any signal date uses only balance-sheet figures a market participant could actually have known. The reason standardisation comes first is the whole subject of Section~\ref{sec:combine}.
+
+\section{How we compute it: three leverage ratios}\label{sec:compute}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Reconstruct MLEV, DTOA, and BLEV from balance-sheet fields.
+  \item Explain the preferred-equity simplification and the treatment of missing debt.
+  \item Identify which ratio is most responsive and why.
+\end{itemize}
+
+Each ratio is built from the firm's most recent balance-sheet filing -- Sharadar SF1 in its as-reported quarterly (ARQ) form, selected point-in-time by filing date (datekey) on or before the signal date, so only figures a market participant could have known are used; a filing older than roughly a year and a half is treated as missing. In full generality each equity-based ratio also adds back preferred equity, but our data carries no preferred-equity field, so that term is zero throughout; the three ratios are then:
+\[
+\text{MLEV}_i = \frac{\text{ME}_i + \text{LD}_i}{\text{ME}_i},
+\qquad
+\text{DTOA}_i = \frac{\text{TD}_i}{\text{TA}_i},
+\qquad
+\text{BLEV}_i = \frac{\text{BE}_i + \text{LD}_i}{\text{BE}_i}.
+\]
+\textbf{Market leverage} adds long-term debt on top of the \emph{market} value of equity and divides by that market value: a debt-free firm scores exactly $1$, and the ratio rises as debt grows relative to the equity the market is pricing. Because its denominator is the live market cap, MLEV reacts immediately when the share price moves -- it is the most responsive of the three, consistent with its role as the dominant, heaviest-weighted ingredient. \textbf{Debt-to-assets} asks what fraction of the asset base is funded by total debt (short-term plus long-term); it can exceed $1$ for a deeply distressed firm whose debt outstrips its assets, and the build keeps those cases as economically real. \textbf{Book leverage} is the book-value twin of market leverage: it divides debt-plus-book-equity by book equity, and so reads the same idea off the accountant's balance sheet rather than the market's valuation.
+
+Where a debt field is simply absent in a filing, it is read as no debt of that kind (zero), not as unknown -- a missing long-term-debt line means the firm reports none. The two equity-based ratios, MLEV and BLEV, are bounded below near $1$ for any solvent firm, since debt only adds to their numerators; we will see in Section~\ref{sec:shape} that this floor shapes the entire cross-section.
+
+\begin{pitfall}
+Use the right equity in the right place. Market leverage must use the \emph{signal-date} market cap, not a stale filing-date market value -- pairing old debt with an old price misreads leverage for exactly the firms whose price has just moved. And debt-to-assets must use total debt over total assets, not long-term debt alone: a firm rolling large short-term borrowings would look deceptively safe if only its long-term debt were counted.
+\end{pitfall}
+
+\section{Standardise, then combine}\label{sec:combine}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Explain why three raw leverage ratios cannot simply be weighted and summed.
+  \item Describe how per-descriptor standardisation makes the weights mean what they say.
+\end{itemize}
+
+This is the step that turns three ratios into one factor. The three quantities live on genuinely incompatible scales. Market and book leverage are ratios that start at $1$ for a debt-free firm and climb -- sometimes into the tens for a heavily indebted one -- while debt-to-assets is a fraction that mostly lives between $0$ and $1$. Their typical magnitudes differ, and, more importantly, their cross-sectional \emph{spreads} differ. If you simply multiplied the raw ratios by $0.75$, $0.15$, $0.10$ and added, the ratio with the widest raw spread would dominate the result for almost any reasonable weighting: the weights would be nearly decorative, and the intended emphasis on market leverage could be silently overridden by whichever descriptor happened to vary most in raw units.
+
+The fix is to standardise each sub-descriptor first. Subtracting the cap-weighted mean and dividing by the equal-weighted standard deviation puts all three on one ruler -- ``standard deviations away from the market'' -- so a one-unit move means the same thing in each. Only then are the weights applied. Each standardised sub-descriptor is also trimmed before it enters the blend -- the two ratios bounded below, market and book leverage, on their upper tail only, and debt-to-assets on both -- so a single extreme balance sheet cannot hijack the composite before the weights even apply. Now $0.75$ really does mean that market leverage drives three-quarters of the blend's spread, and the composite reflects the intended design rather than an accident of units. After blending, the composite is trimmed and standardised once more, so the final exposure is again expressed in clean standard-deviation units.
+
+\begin{intuition}
+Combining raw ratios of different scales is like averaging temperatures where one is in Celsius and another in Fahrenheit: the bigger-numbered scale dominates the average for no good reason. Standardising first converts every sub-descriptor to the same unit -- spread measured in market standard deviations -- so the weights, not the accident of units, decide each descriptor's influence. This is the general recipe for any multi-descriptor factor, and leverage is its clearest illustration.
+\end{intuition}
+
+\begin{pitfall}
+Weighting raw, unstandardised descriptors is a silent failure: it compiles and produces numbers, but the descriptor with the largest raw variance hijacks the composite regardless of the chosen weights. The symptom is a factor that ignores its own design -- weights that should emphasise market leverage end up dominated by whichever ratio has the widest raw scatter. Standardise every descriptor to a common scale before you combine.
+\end{pitfall}
+
+\begin{example}
+Suppose across the universe market leverage ranges over several whole units while debt-to-assets ranges over a few tenths. Weight the raw ratios $0.75/0.15/0.10$ and the result still tracks market leverage almost perfectly -- but only because its raw numbers are bigger, which is the wrong reason. Standardise each to unit spread first, and a name that is one standard deviation high on debt-to-assets now contributes exactly its $0.15$ share, as intended. Same weights, completely different -- and correct -- behaviour.
+\end{example}
+
+\section{The shape of leverage: a floor and a right tail}\label{sec:shape}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Explain why the leverage cross-section is bounded below but not above.
+  \item Read the right-skewed distribution (Figure~\ref{fig:lev_dist}) and the one-sided trim.
+  \item State which firms the canonical build cannot score, and why that matters.
+\end{itemize}
+
+Leverage has a natural floor and no ceiling. A firm can be debt-free -- market and book leverage both equal $1$, debt-to-assets equals $0$ -- but it cannot be \emph{less} than debt-free. So the least-levered names pile up against a low-leverage floor, while the most-levered ones -- financials, utilities, and distressed borrowers -- stretch out into a long right tail. The cross-section is therefore strongly right-skewed: a dense cluster of modestly-levered firms on the left, thinning to a sparse tail of heavily indebted names on the right.
+
+One consequence is that the three-standard-deviation trim is effectively one-sided. Because the distribution is bounded below, almost nothing sits far enough out on the \emph{left} to clip; the trim binds on the \emph{right}, taming the handful of extremely levered names so they do not distort the standardisation. This is the opposite of a symmetric descriptor, where both tails clip about equally.
+
+\begin{observed}
+On the build run the raw leverage composite is sharply right-skewed (skew $\approx +1.8$): a dense pile of low-leverage names against a floor near the bottom of the range, trailing into a long right tail. The composite is naturally bounded, roughly $[-0.6,\,+2.9]$, because it is a weighted sum of standardised, pre-trimmed pieces. The ESTU median is $\approx -0.21$ and about $61\%$ of in-universe names sit below zero -- the typical firm is less levered than the dollar-weighted market, which is pulled up by large, heavily indebted financials. The three-sigma trim clips $\approx 2.7\%$ of ESTU rows, above the usual $0.5$--$2\%$ band and almost entirely on the right tail.
+\end{observed}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/lev_dist.png}
+\caption{The raw leverage cross-section -- the weighted blend of standardised market leverage, debt-to-assets, and book leverage -- pooled over in-ESTU stock-dates. A debt-free firm cannot be less than debt-free, so the least-levered names pile against a low-leverage floor (left) while heavily indebted firms stretch into a long right tail. The distribution is strongly right-skewed with a median near $-0.21$; the three-sigma trim (shaded) bites almost entirely on the right, clipping $\approx 2.7\%$ of ESTU rows.}
+\label{fig:lev_dist}
+\end{figure}
+
+Now the limitation. Book leverage requires positive book equity: dividing by $\text{BE}_i$ is meaningless when book equity is zero or negative. A firm whose accumulated losses have pushed book equity below zero therefore has no defined book leverage, and because the canonical build requires \emph{all three} sub-descriptors to score a name, such firms drop out of the factor entirely. On the build run this all-three requirement leaves on the order of $100{,}000$ stock-month observations unscored -- names missing book leverage (negative book equity) or one of the other two ratios. The irony is sharp: negative-book-equity firms are often among the most distressed and most heavily levered names in the market -- exactly the population a leverage factor exists to flag -- yet the all-three rule censors them from the cross-section. We record this plainly; it is a genuine coverage gap, not a rounding detail.
+
+\begin{pitfall}
+The leverage factor is blind to its most extreme cases. Requiring all three ratios means firms with negative book equity -- distressed, often spectacularly levered -- carry no score at all, so the very names a leverage signal should shout about are silently absent. When you use the factor, remember that the right tail you \emph{can} see is missing the firms that fell off the right edge.
+\end{pitfall}
+
+\section{Trim and standardisation}\label{sec:std}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State the final standardisation target and read the stability diagnostics.
+  \item Explain why leverage is among the most month-to-month stable factors.
+\end{itemize}
+
+The raw composite $c_i$ is trimmed at three standard deviations (binding on the right, as we saw) and standardised over the ESTU to cap-weighted mean $0$ and equal-weighted standard deviation $1$:
+\[
+x_i \;=\; \frac{c_i - \avg_{\text{cw}}(c)}{\std_{\text{ew}}(c)},
+\qquad
+\avg_{\text{cw}}(c) = \frac{\sum_i w_i\, c_i}{\sum_i w_i}.
+\]
+The cap-weighted centring measures a stock's leverage against the dollar-weighted market; the equal-weighted scaling fixes the spread.
+
+\begin{observed}
+After standardisation the cap-weighted mean is $0$ to machine precision and the equal-weighted standard deviation is $1.0$, with $\approx 96\%$ of ESTU rows inside $[\pm 3]$. The exposure is computed for every stock but standardised only on the ESTU, so that in-universe figure is a touch higher than the all-stocks fraction ($\approx 95\%$): out-of-universe names are scored but do not calibrate the mean and spread. The standardised median is negative ($\approx -0.26$), reflecting the right skew -- most firms sit below the dollar-weighted mean. Quintiles are strictly monotone, with the bottom two nearly tied against the low-leverage floor and a steep jump into the top: from $Q_1 \approx -0.45$ up to $Q_5 \approx +1.4$, a spread of $\approx 1.88$. Month-over-month rank stability is very high, Spearman $\rho \approx 0.99$ -- leverage is among the slowest-moving factors, because balance-sheet debt and equity barely change between monthly filings. The deliverable is $\approx 1.53$M scored rows over $330$ dates and $\approx 15{,}700$ tickers; its coverage floor is set lower than other factors, since scoring a name requires all three balance-sheet ratios at once -- the thinnest fundamental coverage of any descriptor.
+\end{observed}
+
+\begin{exercise}
+A firm has a market cap of \$800m, long-term debt of \$200m, total debt of \$260m, total assets of \$1,000m, and book equity of \$400m. Compute MLEV, DTOA, and BLEV. Which is largest, and what does each denominator tell you about why?
+\end{exercise}
+
+\begin{exercise}
+Two descriptors are to be blended $0.8/0.2$. Descriptor A ranges over raw values $1$ to $10$; descriptor B over $0.0$ to $0.5$. Argue in two sentences why summing $0.8A + 0.2B$ on the raw values would make B nearly irrelevant regardless of the $0.2$ weight, and what standardising each first changes.
+\end{exercise}
+
+\begin{exercise}
+Spearman $\rho \approx 0.99$ month-over-month for Leverage, higher than almost any other style factor. Explain why a balance-sheet factor should rank-shuffle far less month to month than a price-based one. (Hint: how often does reported debt change versus a share price?)
+\end{exercise}
+
+\section{Summary, and one caveat}\label{sec:summary}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Recite the Leverage build from balance sheet to standardised exposure.
+  \item State the central limitation and what would address it.
+\end{itemize}
+
+The build, end to end: from the most recent point-in-time filing, form three leverage ratios -- market leverage (debt over market equity), debt-to-assets (total debt over assets), and book leverage (debt over book equity), with preferred equity taken as zero and absent debt as none; standardise each ratio to cap-weighted mean $0$, equal-weighted standard deviation $1$ over the ESTU; blend them $0.75/0.15/0.10$ on that common scale; trim the composite at three standard deviations -- which, given the right skew, bites the right tail; standardise once more. The output is a strongly right-skewed, very slowly-moving debt factor.
+
+\begin{keyresult}
+Leverage is debt relative to value, read three ways and combined on a common scale. The two computations that matter most are standardising each ratio \emph{before} weighting -- so the weights, not the units, decide influence -- and recognising that a low-leverage floor makes the cross-section right-skewed and the trim one-sided.
+\end{keyresult}
+
+\begin{pitfall}
+Two honest limitations remain. \emph{First}, the factor cannot see its most extreme cases: requiring all three ratios drops every firm with negative book equity, and those are disproportionately the distressed, heavily-levered names a leverage signal most needs to flag -- a coverage gap concentrated exactly where the factor should be loudest. \emph{Second}, with no preferred-equity data the two equity-based ratios omit that term, mildly understating leverage for the minority of firms financed partly with preferred stock. The clear lever for the second is a preferred-equity data source; the first is a gap to remember whenever the factor is used, since the firms that fell off the right edge are invisible in the scores that remain.
+\end{pitfall}
+
+\begin{remark}
+None of this changes the factor's place in the model: Leverage remains the debt dimension, sitting alongside size, value, and the rest. The caveats are about \emph{coverage at the extreme} and a small missing balance-sheet term, not about whether the leverage signal is real.
+\end{remark}
+
+\begin{center}\small\itshape
+References: Menchero, Orr \& Wang (2011), \textit{The Barra US Equity Model (USE4)} --- Empirical Notes (Appendix A) and Methodology Notes (Sec. 2.2--2.3). ESTU treated as an MSCI USA IMI proxy; measured quantities are from a personal build run.
+\end{center}
+
+\end{document}

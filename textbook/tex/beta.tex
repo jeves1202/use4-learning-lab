@@ -1,0 +1,312 @@
+\documentclass[11pt]{article}
+
+%------------------------- fonts & encoding -----------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage[sc]{mathpazo}
+\linespread{1.06}
+\usepackage{microtype}
+
+%------------------------- layout ---------------------------------------------
+\usepackage[a4paper,margin=1.05in,marginparwidth=1.0in]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[most,breakable]{tcolorbox}
+
+%------------------------- palette --------------------------------------------
+\definecolor{crimson}{HTML}{A51C30}
+\definecolor{ink}{HTML}{1A1A1A}
+\definecolor{steel}{HTML}{2C5F8A}
+\definecolor{amber}{HTML}{9A6A00}
+\definecolor{teal}{HTML}{1F6F6B}
+\definecolor{paperlt}{HTML}{F7F4EF}
+
+%------------------------- section styling ------------------------------------
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\color{steel}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.6em}
+
+%------------------------- hyperref -------------------------------------------
+\usepackage[colorlinks=true,linkcolor=steel,citecolor=steel,urlcolor=crimson]{hyperref}
+
+%------------------------- theorem environments -------------------------------
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{exercise}{Exercise}[section]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[section]
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+%------------------------- callout boxes --------------------------------------
+\newtcolorbox{intuition}{
+  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=crimson, coltitle=paperlt, fonttitle=\bfseries, title={Intuition}}
+
+\newtcolorbox{pitfall}{
+  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=amber, coltitle=paperlt, fonttitle=\bfseries, title={Pitfall}}
+
+\newtcolorbox{keyresult}{
+  enhanced, breakable, colback=steel!6, colframe=steel, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=steel, coltitle=paperlt, fonttitle=\bfseries, title={Takeaway}}
+
+\newtcolorbox{observed}{
+  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=teal, coltitle=paperlt, fonttitle=\bfseries, title={Measured}}
+
+%------------------------- math operators -------------------------------------
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Corr}{corr}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\std}{std}
+\DeclareMathOperator*{\avg}{\mathbb{E}}
+\newcommand{\T}{^{\!\top}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\half}{\tfrac12}
+\newcommand{\wvec}{\mathbf{w}}
+\newcommand{\Xmat}{\mathbf{X}}
+\newcommand{\Fmat}{\mathbf{F}}
+\newcommand{\Vmat}{\mathbf{V}}
+\newcommand{\Umat}{\mathbf{U}}
+\newcommand{\Rmat}{\mathbf{R}}
+\newcommand{\Lam}{\boldsymbol{\Lambda}}
+\newcommand{\Del}{\boldsymbol{\Delta}}
+\newcommand{\fvec}{\mathbf{f}}
+
+%------------------------- title ----------------------------------------------
+\title{\vspace{-2.2em}
+  {\color{steel}\rule{\textwidth}{1.3pt}}\\[0.7em]
+  \Huge\bfseries Beta\\[0.35em]
+  \large\mdseries The market-sensitivity factor --- a time-weighted regression slope on the market\\[0.4em]
+  {\color{steel}\rule{\textwidth}{0.7pt}}}
+\author{}
+\date{}
+
+%------------------------- watermark footer -----------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{black!45}MSCI Barra USE4 Imitation}
+\fancyfoot[R]{\footnotesize\color{black!45}\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+Beta is the market-sensitivity factor: it measures how strongly a stock moves with the market, so that amplifiers load high and dampeners load low. A stock with a beta of $1.5$ tends to rise (and fall) half again as much as the market, one with a beta of $0.5$ only half as much, and the market portfolio has a beta of exactly one against itself. Unlike the balance-sheet factors, Beta is not read off a filing; it is \emph{estimated} from a regression of the stock's excess returns on the market's, over a trailing year of daily data, with recent days weighted more heavily than old ones through an exponential decay. Two facts shape everything about the factor. First, recency matters: a company's market sensitivity drifts as its business and leverage change, so the build weights the last few months far above the start of the window. Second, the estimate is noisy: for a typical stock the market explains only about a fifth of its daily return variation, the rest idiosyncratic, which makes Beta the least month-to-month stable of the style factors and a quantity to be read as an estimate, not a fact.
+\end{abstract}
+
+\begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
+\textbf{How to read these notes.} We move from \emph{why} Beta is a factor to \emph{how} USE4 specifies it, then to how we actually run the regression, with a deliberate stop at the exponential weighting that makes the estimate timely (Section~\ref{sec:halflife}) and at the noise that makes it uncertain (Section~\ref{sec:noise}). Read those two slowly; they carry the weight of the set. The numbers labelled as measured come from a single run of our personal build.
+
+\smallskip
+Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
+
+\smallskip
+\textbf{Reference material.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item External: Menchero, Orr \& Wang (2011), USE4 Empirical Notes (Appendix A) and Methodology Notes (Sec. 2.2--2.3).
+\end{itemize}
+\end{tcolorbox}
+
+\tableofcontents
+\bigskip
+
+\section{What Beta is, and why it is a factor}\label{sec:what}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State Beta as a stock's sensitivity to market moves.
+  \item Explain why market sensitivity is the largest single source of shared risk.
+  \item Say in one sentence what the Beta exposure is, before any standardisation.
+\end{itemize}
+
+Beta answers a simple question: when the market moves, how much does this stock move with it? A stock that tends to rise one-and-a-half percent for every one percent the market rises has a beta of $1.5$; it amplifies the market. One that rises only half a percent has a beta of $0.5$; it dampens. A beta of one tracks the market move for move, and the market portfolio -- being the market -- has a beta of exactly one against itself. The rare stock with a negative beta tends to move \emph{against} the market, a natural hedge.
+
+Market sensitivity is the single largest source of shared risk in equities. When the market falls, high-beta stocks fall hardest and together -- their common exposure to the market is precisely what a risk model must capture first, before any industry or style effect. This is the oldest factor in finance, the slope in the capital asset pricing model, and it remains the backbone of systematic risk. What distinguishes Beta from the balance-sheet factors is that it is not a number you can look up; it must be \emph{estimated} from how the stock and the market have actually moved together.
+
+\begin{intuition}
+The whole factor answers one question: \emph{how much of the market's swing does this stock inherit?} Beta above one means an amplifier -- more market risk than average; below one a dampener; near zero a stock that marches to its own drummer. Hold that picture -- a sensitivity, a slope -- and the regression below is just the natural way to measure it.
+\end{intuition}
+
+\begin{keyresult}
+The Beta exposure is a standardised version of the slope from regressing a stock's excess returns on the market's. Everything that follows is about which returns, over what window, and how to weight them.
+\end{keyresult}
+
+\section*{Notation}
+\addcontentsline{toc}{section}{Notation}
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$r_{i,\tau}$ & excess daily return of stock $i$ on day $\tau$ (return minus the risk-free rate) \\
+$r_{m,\tau}$ & excess daily return of the ESTU cap-weighted market on day $\tau$ \\
+$\omega_\tau$ & exponential time-decay weight, $\exp\!\big(-\ln 2\,(t-\tau)/h\big)$ \\
+$h$ & half-life of the decay (one quarter, $\approx 63$ trading days) \\
+$\beta_i$ & raw market beta of stock $i$: the time-weighted regression slope \\
+$\alpha_i,\ R^2_i$ & regression intercept and goodness-of-fit (diagnostics) \\
+$x_i$ & standardised BETA exposure for stock $i$ \\
+$w_i$ & cap weight of stock $i$ in the ESTU \\
+$\avg_{\text{cw}}, \std_{\text{ew}}$ & cap-weighted mean, equal-weighted standard deviation over the ESTU \\
+$Q_1,\dots,Q_5$ & quintiles of raw $\beta_i$, from low-beta ($Q_1$) to high-beta ($Q_5$) \\
+ESTU & estimation universe (MSCI USA IMI proxy) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{How USE4 defines it}\label{sec:def}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State the regression, the window, the half-life, and the benchmark.
+  \item Note that Beta is a time-series estimate, then standardised cross-sectionally.
+\end{itemize}
+
+USE4 defines Beta as the slope of an exponentially-weighted regression of a stock's excess returns on the market's excess returns, over a trailing one-year (252 trading-day) window with a one-quarter (63 trading-day) half-life (Menchero, Orr \& Wang 2011, Empirical Notes, App. A). Excess means in excess of the risk-free rate; the market is the cap-weighted portfolio of the estimation universe, locked at each signal date. The regression also yields an intercept and a goodness-of-fit, kept as diagnostics.
+
+The slope is computed per stock from its own time series of daily returns -- a different kind of construction from the cross-sectional, read-it-off-the-filing descriptors. The resulting raw betas are then trimmed at three standard deviations (Methodology Notes, Sec. 2.2) and standardised over the estimation universe to cap-weighted mean $0$ and equal-weighted standard deviation $1$ (Sec. 2.3). All returns are point-in-time: a signal date's beta uses only the year of returns ending on that date.
+
+\section{How we compute it: a time-weighted regression}\label{sec:compute}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Write the regression and the weighted-slope formula.
+  \item Explain the excess-return and cap-weighted-benchmark choices.
+\end{itemize}
+
+For each stock at each signal date we regress its daily excess return on the market's daily excess return across the trailing window:
+\[
+r_{i,\tau} \;=\; \alpha_i + \beta_i\, r_{m,\tau} + \varepsilon_{i,\tau},
+\qquad \tau = t-251,\,\dots,\,t,
+\]
+with each day weighted by $\omega_\tau = \exp(-\ln 2\,(t-\tau)/h)$. The slope -- the beta -- is the weighted covariance of the two return series divided by the weighted variance of the market:
+\[
+\beta_i \;=\; \frac{\sum_\tau \omega_\tau\,(r_{i,\tau}-\bar r_i)(r_{m,\tau}-\bar r_m)}{\sum_\tau \omega_\tau\,(r_{m,\tau}-\bar r_m)^2}
+\;=\; \frac{\Cov_\omega(r_i, r_m)}{\Var_\omega(r_m)},
+\]
+where the means are the weighted means over the window. The intercept $\alpha_i$ and the fit $R^2_i$ fall out of the same regression. A stock needs at least a few months of return history for the estimate to be meaningful; shorter histories carry no usable own-data basis for a market beta and are left unscored.
+
+Two modelling choices deserve a word. We regress \emph{excess} returns -- returns net of the risk-free rate -- because beta is about sensitivity to the market's \emph{risk premium}, not to the risk-free drift that both share. And the market is the cap-weighted return of the estimation universe, not an external index: beta is measured against the same investable universe the rest of the model lives in, so the cap-weighted average beta across that universe is one by construction -- the market is, definitionally, beta one to itself.
+
+\begin{pitfall}
+Match the pieces or the slope is meaningless. The stock return and the market return must be the \emph{same} kind of return (both daily, both excess, both point-in-time, aligned on the same trading days); subtracting the risk-free from one series but not the other, or pairing a stale return with a current market move, biases the slope. And the benchmark must be the cap-weighted market return -- regressing on an equal-weighted average would measure sensitivity to a portfolio nobody holds, and the convenient anchor that the market's beta is one would quietly break.
+\end{pitfall}
+
+\section{Why weight recent days more}\label{sec:halflife}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Explain why an equal-weighted window mis-measures a drifting beta.
+  \item Describe what the half-life does and how it trades timeliness against stability.
+\end{itemize}
+
+This is the choice that makes the estimate timely. A plain regression over a year of returns treats a day eleven months ago as exactly as informative about today's beta as yesterday. But beta drifts: a firm that takes on debt, changes its business mix, or enters a new phase of its life becomes more or less market-sensitive, and last month's co-movement describes its current beta far better than last winter's does. Equal weighting smears those changes together and lags reality.
+
+The fix is to weight recent days more, with an exponential decay. The half-life $h$ is the horizon at which a day's weight has fallen to one-half: a day a quarter ago counts half as much as today, two quarters ago a quarter as much, and so on, fading smoothly toward zero at the far end of the window. With a one-quarter half-life over a one-year window, the most recent few months dominate the estimate while the older months still lend stability. The half-life is the tuning knob between two failure modes: too short and the beta jitters from month to month on noise; too long and it clings to a stale regime. A quarter-length half-life over a year of data is the chosen balance.
+
+\begin{intuition}
+Think of the half-life as the memory of the estimate. A short memory reacts fast but is forgetful and jumpy; a long memory is steady but slow to notice that a firm has changed. Exponential weighting gives a graceful middle: yesterday matters most, last quarter still counts for half, last year barely registers -- a continuously fading memory rather than a hard cutoff that would forget everything older than a year all at once.
+\end{intuition}
+
+\section{Beta is an estimate, not a fact}\label{sec:noise}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Interpret the low regression $R^2$ and what it implies for a single beta.
+  \item Read the cross-section, and distinguish raw beta from the standardised score.
+\end{itemize}
+
+A balance-sheet ratio is a fact you read off a filing; a beta is an \emph{estimate} pulled from a noisy regression, and it pays to remember the difference. The regression's goodness-of-fit is modest: for a typical investable stock the market explains only about a fifth of its daily return variation (Figure~\ref{fig:beta_dist}, right), and the remaining four-fifths is idiosyncratic noise that the market beta does not capture. So any single stock's beta carries real estimation error, and beta is the least stable of the style factors from month to month -- not because the underlying sensitivity lurches around, but because the estimate of it does.
+
+The cross-section itself behaves sensibly (Figure~\ref{fig:beta_dist}, left). Raw betas cluster around one, with the cap-weighted estimation-universe beta sitting at one by construction and the median stock just above it; the distribution is right-skewed, with a tail of high-beta names -- cyclicals, leveraged firms, speculative growth -- and only a tiny fraction of stocks with negative betas. That shape is exactly what market sensitivity should look like.
+
+\begin{pitfall}
+Do not read the \emph{standardised} score as a beta. After standardisation the exposure is measured in standard deviations from the cap-weighted mean, so a score of zero means an average-beta stock, not a stock with beta one, and a score of $+1$ means one standard deviation more market-sensitive than the universe, not beta two. The economic anchor ``one equals the market'' lives in the \emph{raw} beta; the standardised score carries only the cross-sectional ranking. Keep the raw beta when you want the economic magnitude.
+\end{pitfall}
+
+\begin{observed}
+On the build run the raw beta has an ESTU median of $\approx 1.06$, with the cap-weighted mean pinned at $\approx 1.0$ by construction. The cross-section is right-skewed (skew $\approx +0.65$) toward a high-beta tail, and only $\approx 0.6\%$ of in-universe names have a negative beta. The regression fit is low -- median $R^2 \approx 0.22$, so the market explains roughly a fifth of a typical stock's daily variance. The three-sigma trim clips $\approx 1.2\%$ of ESTU rows, mostly on the high-beta side. After standardisation the cap-weighted mean is $0$ to machine precision, the equal-weighted standard deviation is $1.0$, and $\approx 99\%$ of ESTU rows fall inside $[\pm 3]$; the standardisation is calibrated on the ESTU, so the all-stocks figure is a touch lower ($\approx 97\%$), out-of-universe names being scored but not used to set the mean and spread. Quintiles of raw beta are strictly monotone, from a defensive $Q_1 \approx 0.43$ to an aggressive $Q_5 \approx 1.91$, a spread of $\approx 1.48$. Month-over-month rank stability is the lowest of the style factors, Spearman $\rho \approx 0.95$, a direct consequence of the estimation noise; as a sanity check, a portfolio long the top beta quintile and short the bottom correlates $\approx 0.75$ with the market itself. The deliverable is $\approx 1.84$M scored rows over $327$ dates and $\approx 16{,}450$ tickers.
+\end{observed}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/beta_dist.png}
+\caption{Beta, pooled over in-ESTU stock-dates. \emph{Left:} raw market betas cluster around the market's $\beta=1$, with the cap-weighted mean pinned at one and a right-skewed tail of high-beta names. \emph{Right:} the regression $R^2$ is low -- median $\approx 0.22$ -- the market explains only a minority of a typical stock's daily return variance, which is why beta is a noisy, comparatively unstable estimate.}
+\label{fig:beta_dist}
+\end{figure}
+
+\section{Trim and standardisation}\label{sec:std}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State the standardisation target and why the trim leans on the high side.
+\end{itemize}
+
+The raw beta $\beta_i$ is trimmed at three standard deviations and standardised over the ESTU to cap-weighted mean $0$ and equal-weighted standard deviation $1$:
+\[
+x_i \;=\; \frac{\beta_i - \avg_{\text{cw}}(\beta)}{\std_{\text{ew}}(\beta)},
+\qquad
+\avg_{\text{cw}}(\beta) = \frac{\sum_i w_i\, \beta_i}{\sum_i w_i} \approx 1.
+\]
+Because the raw distribution is right-skewed, the trim removes mostly the extreme high-beta names; the left side, bounded near zero for all but a few negative-beta stocks, rarely binds. The cap-weighted centring measures a stock's market sensitivity against the dollar-weighted market (whose beta is one), and the equal-weighted scaling fixes the spread.
+
+\begin{exercise}
+Over a window, a stock's weighted covariance with the market is $0.018$ and the market's weighted variance is $0.012$. Compute the beta. Is the stock an amplifier or a dampener, and what would a beta of exactly $1$ have implied about the covariance?
+\end{exercise}
+
+\begin{exercise}
+A stock's regression has $R^2 = 0.20$. In words, what fraction of its daily return variation is explained by the market, and what does the rest represent? Why does a low $R^2$ make a single estimated beta something to treat with caution?
+\end{exercise}
+
+\begin{exercise}
+Suppose you replaced the $63$-day half-life with one ten times longer (so the whole year is weighted almost equally). Describe qualitatively what happens to (a) how quickly the beta of a firm that just levered up is recognised, and (b) the month-to-month stability of the beta series.
+\end{exercise}
+
+\section{Summary, and one caveat}\label{sec:summary}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Recite the Beta build from daily returns to standardised exposure.
+  \item State the central limitation and what would address it.
+\end{itemize}
+
+The build, end to end: take a year of daily excess returns for the stock and for the cap-weighted estimation-universe market; regress the first on the second with exponentially-decaying weights at a one-quarter half-life, so recent days dominate; read off the slope as the raw beta (keeping the intercept and fit as diagnostics); require at least a few months of history; trim at three standard deviations, which bites mostly the high-beta tail; and standardise to cap-weighted mean $0$, equal-weighted standard deviation $1$. The output is a right-skewed, market-anchored sensitivity factor -- timely, thanks to the decay, but noisy, thanks to the low fit.
+
+\begin{keyresult}
+Beta is a time-weighted regression slope on the market. The two computations that matter most are the exponential decay -- which keeps a drifting sensitivity current -- and the recognition that the estimate is noisy (low $R^2$), so a single beta is an estimate with error, and the standardised score is a ranking, not a beta.
+\end{keyresult}
+
+\begin{pitfall}
+One honest limitation dominates. Beta is estimated, not measured, and the estimate is noisy: with the market explaining only about a fifth of a stock's variance, individual betas carry real error and drift, and the half-life can trade timeliness against stability but cannot remove the noise. A standard remedy this build does not apply is to shrink each raw beta toward one (a Bayesian adjustment that pulls noisy, extreme estimates back toward the market), which would reduce error at the cost of some responsiveness. A smaller, second limitation is that the market benchmark uses total-market-cap weights over the estimation universe rather than float-adjusted weights, so the reference portfolio is a close but not exact stand-in for the investable market. The clear levers are Bayesian shrinkage of the raw betas and a float-adjusted benchmark.
+\end{pitfall}
+
+\begin{remark}
+None of this changes the factor's place in the model: Beta remains the market-sensitivity dimension, the first and largest axis of systematic risk, sitting alongside size, value, and the rest. The caveat is about \emph{estimation noise}, not about whether market sensitivity is real.
+\end{remark}
+
+\begin{center}\small\itshape
+References: Menchero, Orr \& Wang (2011), \textit{The Barra US Equity Model (USE4)} --- Empirical Notes (Appendix A) and Methodology Notes (Sec. 2.2--2.3). ESTU treated as an MSCI USA IMI proxy; measured quantities are from a personal build run.
+\end{center}
+
+\end{document}

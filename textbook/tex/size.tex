@@ -50,27 +50,24 @@
 
 %------------------------- callout boxes --------------------------------------
 \newtcolorbox{intuition}{
-  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.4pt,
+  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.5pt,
   left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
-  borderline west={2.5pt}{0pt}{crimson},
-  fonttitle=\bfseries\color{crimson}, title={Intuition}}
+  colbacktitle=crimson, coltitle=paperlt, fonttitle=\bfseries, title={Intuition}}
 
 \newtcolorbox{pitfall}{
-  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.4pt,
+  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.5pt,
   left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
-  borderline west={2.5pt}{0pt}{amber},
-  fonttitle=\bfseries\color{amber}, title={What goes wrong}}
+  colbacktitle=amber, coltitle=paperlt, fonttitle=\bfseries, title={Pitfall}}
 
 \newtcolorbox{keyresult}{
   enhanced, breakable, colback=steel!6, colframe=steel, boxrule=0.5pt,
   left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
-  fonttitle=\bfseries\color{steel}, title={Takeaway}}
+  colbacktitle=steel, coltitle=paperlt, fonttitle=\bfseries, title={Takeaway}}
 
 \newtcolorbox{observed}{
-  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.4pt,
+  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.5pt,
   left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
-  borderline west={2.5pt}{0pt}{teal},
-  fonttitle=\bfseries\color{teal}, title={What the pipeline measured}}
+  colbacktitle=teal, coltitle=paperlt, fonttitle=\bfseries, title={Measured}}
 
 %------------------------- math operators -------------------------------------
 \DeclareMathOperator{\Var}{Var}
@@ -98,8 +95,7 @@
   \Huge\bfseries Size\\[0.35em]
   \large\mdseries Log market capitalisation --- the simplest style, and why its scores skew negative\\[0.4em]
   {\color{steel}\rule{\textwidth}{0.7pt}}}
-\author{\textsc{Mathematical Finance}\\[0.2em]
-  \small Risk modelling}
+\author{}
 \date{}
 
 %------------------------- watermark footer -----------------------------------
@@ -120,7 +116,7 @@ Size is the simplest style factor in USE4: a stock's exposure is just the standa
 \end{abstract}
 
 \begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
-\textbf{How to read these notes.} We move in the order the build runs: what Size measures (\S\ref{sec:what}), how USE4 defines it (\S\ref{sec:def}), how we compute the raw descriptor (\S\ref{sec:compute}), the one underspecified step -- trimming log-cap (\S\ref{sec:trim}), the standardisation and Size's distinctive signature (\S\ref{sec:std}), and a compact recap with one honest caveat (\S\ref{sec:summary}). Four coloured boxes recur: \textcolor{teal}{\textbf{Intuition}} builds the mental picture, \textcolor{crimson}{\textbf{What goes wrong}} flags a concrete trap, \textcolor{amber}{\textbf{Takeaway}} states the load-bearing point, and \textcolor{steel}{\textbf{What the pipeline measured}} reports real numbers from the build run. Definitions, examples, and exercises are numbered per section.
+\textbf{How to read these notes.} We move in the order the build runs: what Size measures (\S\ref{sec:what}), how USE4 defines it (\S\ref{sec:def}), how we compute the raw descriptor (\S\ref{sec:compute}), the one underspecified step -- trimming log-cap (\S\ref{sec:trim}), the standardisation and Size's distinctive signature (\S\ref{sec:std}), and a compact recap with one caveat (\S\ref{sec:summary}). Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run. Definitions, examples, and exercises are numbered per section.
 
 \smallskip
 \textbf{Reference material.}
@@ -306,7 +302,7 @@ Explain why the ESTU median SIZE score ($\approx -2.25$) being so far below zero
 Roughly $80\%$ of ESTU names lie within $[\pm 3]$, against $\approx 44\%$ across all coverage. Argue qualitatively why widening the universe to micro-caps \emph{lowers} the fraction inside the band. (Hint: micro-caps add mass far below the cap-weighted center; what does that do to the left tail relative to $-3$?)
 \end{exercise}
 
-\section{Summary, and one honest caveat}\label{sec:summary}
+\section{Summary, and one caveat}\label{sec:summary}
 
 \paragraph{Learning objectives.}
 \begin{itemize}[leftmargin=1.4em,topsep=2pt,itemsep=1pt]
@@ -317,11 +313,11 @@ Roughly $80\%$ of ESTU names lie within $[\pm 3]$, against $\approx 44\%$ across
 The whole factor is four steps: take \emph{total} market cap, take its natural \emph{log}, \emph{trim} the result around the equal-weighted mean with a band wide enough to spare real large caps, and \emph{standardise} to cap-weighted mean $0$ / equal-weighted std $1$ over the ESTU. The output is a slow-moving, asymmetric score whose zero is the market's cap-weighted size and whose median name sits well below it -- a signature intrinsic to log-cap, and the Size column of the exposure matrix the cross-sectional regression is run against. It also feeds the downstream non-linear size factor.
 
 \begin{pitfall}
-\textbf{Honest caveat: total, not float.} We use total market cap because the data source lacks free-float figures. Total cap counts shares that never trade -- founder, insider, and strategic holdings -- so it overstates the investable size of closely held firms, making a founder-controlled company look larger (more positive SIZE) than its tradable footprint warrants. The clean fix is not a modelling trick but a data one: procure free-float share counts and recompute $M_n$ on the floated share base. Until then, read SIZE for insider-heavy names with this bias in mind.
+\textbf{Caveat: total, not float.} We use total market cap because the data source lacks free-float figures. Total cap counts shares that never trade -- founder, insider, and strategic holdings -- so it overstates the investable size of closely held firms, making a founder-controlled company look larger (more positive SIZE) than its tradable footprint warrants. The clean fix is not a modelling trick but a data one: procure free-float share counts and recompute $M_n$ on the floated share base. Until then, read SIZE for insider-heavy names with this bias in mind.
 \end{pitfall}
 
 \begin{center}\small\itshape
-References: Menchero, Orr \& Wang (2011), \textit{The Barra US Equity Model (USE4)} --- Empirical Notes, Appendix A (descriptor definitions and weights) and Methodology Notes, Sec. 2.2--2.3 (outlier trimming and standardisation). ESTU treated as an MSCI USA IMI proxy.
+References: Menchero, Orr \& Wang (2011), \textit{The Barra US Equity Model (USE4)} --- Empirical Notes (Appendix A) and Methodology Notes (Sec. 2.2--2.3). ESTU treated as an MSCI USA IMI proxy; measured quantities are from a personal build run.
 \end{center}
 
 \end{document}

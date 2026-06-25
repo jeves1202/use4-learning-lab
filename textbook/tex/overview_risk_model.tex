@@ -50,27 +50,24 @@
 
 %------------------------- callout boxes --------------------------------------
 \newtcolorbox{intuition}{
-  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.4pt,
+  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.5pt,
   left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
-  borderline west={2.5pt}{0pt}{crimson},
-  fonttitle=\bfseries\color{crimson}, title={Intuition}}
+  colbacktitle=crimson, coltitle=paperlt, fonttitle=\bfseries, title={Intuition}}
 
 \newtcolorbox{pitfall}{
-  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.4pt,
+  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.5pt,
   left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
-  borderline west={2.5pt}{0pt}{amber},
-  fonttitle=\bfseries\color{amber}, title={What goes wrong}}
+  colbacktitle=amber, coltitle=paperlt, fonttitle=\bfseries, title={Pitfall}}
 
 \newtcolorbox{keyresult}{
   enhanced, breakable, colback=steel!6, colframe=steel, boxrule=0.5pt,
   left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
-  fonttitle=\bfseries\color{steel}, title={Takeaway}}
+  colbacktitle=steel, coltitle=paperlt, fonttitle=\bfseries, title={Takeaway}}
 
 \newtcolorbox{observed}{
-  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.4pt,
+  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.5pt,
   left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
-  borderline west={2.5pt}{0pt}{teal},
-  fonttitle=\bfseries\color{teal}, title={What the pipeline measured}}
+  colbacktitle=teal, coltitle=paperlt, fonttitle=\bfseries, title={Measured}}
 
 %------------------------- math operators -------------------------------------
 \DeclareMathOperator{\Var}{Var}
@@ -98,8 +95,7 @@
   \Huge\bfseries The USE4 Risk Model, End to End\\[0.35em]
   \large\mdseries The assembly line from data to a portfolio risk forecast\\[0.4em]
   {\color{steel}\rule{\textwidth}{0.7pt}}}
-\author{\textsc{Mathematical Finance}\\[0.2em]
-  \small Risk modelling}
+\author{}
 \date{}
 
 %------------------------- watermark footer -----------------------------------
@@ -116,11 +112,11 @@
 \thispagestyle{empty}
 
 \begin{abstract}
-A risk model answers one practical question: how much will this portfolio's value bounce around, and where does that uncertainty come from? Forecasting the full covariance of thousands of stocks directly is hopeless---the matrix has millions of entries and far too little data to estimate them. The USE4 model sidesteps this by asserting that nearly all co-movement is driven by a few dozen shared factors: a market/country factor, industry membership, and a handful of measurable style tilts. Each stock's return is its exposure to those factors times the factors' returns, plus an idiosyncratic remainder, and the asset covariance collapses to $V = \Xmat\Fmat\Xmat\T + \Del$, a low-rank factor piece plus a diagonal of stock-specific variances. From this, any portfolio's variance splits cleanly into factor risk and specific risk, $\sigma_p^2 = \wvec\T\Xmat\Fmat\Xmat\T\wvec + \wvec\T\Del\wvec$, which is the governing identity of everything that follows. This note is the standalone map of the assembly line that builds the four objects $\Xmat$, $\fvec$ (with its residual $u$), $\Fmat$, and $\Del$, and composes them into that one number. The emphasis is conceptual: why each stage exists, what it produces, and how the stages chain so that the cap-weighted market turns out to be almost pure country risk while a momentum tilt turns out to be almost pure style risk.
+A risk model answers one practical question: how much will this portfolio's value bounce around, and where does that uncertainty come from? Forecasting the full covariance of thousands of stocks directly is hopeless---the matrix has millions of entries and far too little data to estimate them. The USE4 model sidesteps this by asserting that nearly all co-movement is driven by a few dozen shared factors: a market/country factor, industry membership, and a handful of measurable style tilts. Each stock's return is its exposure to those factors times the factors' returns, plus an idiosyncratic remainder, and the asset covariance collapses to $V = \Xmat\Fmat\Xmat\T + \Del$, a low-rank factor piece plus a diagonal of stock-specific variances. From this, any portfolio's variance splits cleanly into factor risk and specific risk, $\sigma_p^2 = \wvec\T\Xmat\Fmat\Xmat\T\wvec + \wvec\T\Del\wvec$, which is the governing identity of everything that follows. This note maps the assembly line that builds the four objects $\Xmat$, $\fvec$ (with its residual $u$), $\Fmat$, and $\Del$, and composes them into that one number. The emphasis is conceptual: why each stage exists, what it produces, and how the stages chain so that the cap-weighted market turns out to be almost pure country risk while a momentum tilt turns out to be almost pure style risk.
 \end{abstract}
 
 \begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
-\textbf{How to read these notes.} Read this document top to bottom as a tour of one pipeline. Section~\ref{sec:goal} states the single identity that the whole model serves; Sections~\ref{sec:data}--\ref{sec:specific} walk the assembly line left to right (data, exposures $\Xmat$, the regression that yields factor returns $\fvec$ and specific returns $u$, the factor covariance $\Fmat$, and the specific diagonal $\Del$); Section~\ref{sec:decomp} composes them back into portfolio risk and attribution; Section~\ref{sec:caveat} reads the line right to left and gives an honest caveat. Four coloured boxes recur: \textcolor{teal}{\textbf{Intuition}} builds a mental picture, \textcolor{amber}{\textbf{What goes wrong}} flags a trap, \textcolor{crimson}{\textbf{Takeaway}} states a result worth memorising, and \textcolor{steel}{\textbf{What the pipeline measured}} reports real numbers from the build. This set is self-contained and assumes no other note.
+\textbf{How to read these notes.} Read this document top to bottom as a tour of one pipeline. Section~\ref{sec:goal} states the single identity that the whole model serves; Sections~\ref{sec:data}--\ref{sec:specific} walk the assembly line left to right (data, exposures $\Xmat$, the regression that yields factor returns $\fvec$ and specific returns $u$, the factor covariance $\Fmat$, and the specific diagonal $\Del$); Section~\ref{sec:decomp} composes them back into portfolio risk and attribution; Section~\ref{sec:caveat} recaps the line and gives a caveat. Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
 
 \smallskip
 \textbf{Reference material.}
@@ -446,17 +442,17 @@ Verify that $\sigma_p$ is homogeneous of degree one, i.e. $\sigma_p(c\wvec)=c\,\
 Two portfolios have identical total volatility but one is $90\%$ country and the other is $90\%$ specific. Which would you expect to behave more like an index fund, and which is more vulnerable to a single stock's blow-up? (Hint: specific risk does not diversify if it is concentrated in a few names.)
 \end{exercise}
 
-\section{What the model gets right, and an honest caveat}\label{sec:caveat}
+\section{What the model gets right, and a caveat}\label{sec:caveat}
 
 \paragraph{Learning objectives.}
 \begin{itemize}[leftmargin=1.4em,nosep]
-  \item Recite the right-to-left compositional read of the pipeline.
+  \item Recite the left-to-right compositional read of the pipeline.
   \item State the master identity in one sentence.
   \item List the model's principal honest limitations.
 \end{itemize}
 
 \begin{intuition}
-Read the line right to left. The portfolio risk $\sigma_p$ is a quadratic form in the four built objects. $\Fmat$ and $\Del$ are forecasts of two covariances---the factor returns' and the specific returns'---both produced by the cross-sectional regression. That regression needs the exposure matrix $\Xmat$ and a clean return panel, defined over the estimation universe. And the universe and the panel need point-in-time data. Pull any link and the chain breaks; assemble them in order and one risk number falls out the end.
+Read the line left to right. Point-in-time data defines the estimation universe and a clean return panel; those yield the exposure matrix $\Xmat$; the cross-sectional regression turns $\Xmat$ and returns into factor returns $\fvec$ and specific returns $u$; $\Fmat$ and $\Del$ forecast the covariance of each; and the portfolio identity assembles all four into one number, $\sigma_p$. Pull any link and the chain breaks; assemble them in order and one risk number falls out the end.
 \end{intuition}
 
 \begin{keyresult}
@@ -464,7 +460,7 @@ The entire forecast is a single identity, $\sigma_p^2 = \wvec\T\Xmat\Fmat\Xmat\T
 \end{keyresult}
 
 \begin{pitfall}
-\textbf{Honest caveat.} The forecast is only as strong as its weakest stage---a flaw in the universe, a leaked descriptor, or a mis-specified industry map propagates through everything downstream. Four limitations are worth naming plainly. First, \emph{total} market cap, not free float, pervades every stage; for tightly-held names this overstates investable size. Second, the universe, the index proxy, and the descriptors are first-principles reconstructions, not the licensed MSCI/Barra constructs, so they will differ from the commercial model in detail. Third, $\Del$ is assumed diagonal---specific returns are taken to be mutually uncorrelated---which can understate risk when residuals share structure (for example within a tight industry). Fourth, the end-to-end portfolio bias of about $0.91$ means the model \emph{mildly over-predicts} risk, and it has not been benchmarked against a commercial risk model. Treat the outputs as a faithful, instructive replica---not a drop-in substitute.
+\textbf{Caveat.} The forecast is only as strong as its weakest stage---a flaw in the universe, a leaked descriptor, or a mis-specified industry map propagates through everything downstream. Four limitations are worth naming plainly. First, \emph{total} market cap, not free float, pervades every stage; for tightly-held names this overstates investable size. Second, the universe, the index proxy, and the descriptors are first-principles reconstructions, not the licensed MSCI/Barra constructs, so they will differ from the commercial model in detail. Third, $\Del$ is assumed diagonal---specific returns are taken to be mutually uncorrelated---which can understate risk when residuals share structure (for example within a tight industry). Fourth, the end-to-end portfolio bias of about $0.91$ means the model \emph{mildly over-predicts} risk, and it has not been benchmarked against a commercial risk model. Treat the outputs as a faithful, instructive replica---not a drop-in substitute.
 \end{pitfall}
 
 None of this makes the model unusable; it makes it honest. The structure is sound, the identities hold numerically, and the composition behaves exactly as theory predicts. The natural path forward is production hardening: float-adjusting market cap, widening the validation against realised risk, and tightening the calibration that drives the mild over-prediction toward a bias of one.
@@ -472,7 +468,7 @@ None of this makes the model unusable; it makes it honest. The structure is soun
 \appendix
 \section{The compose step in pseudocode}
 
-A tiny sketch of the final composition, mirroring the build with a dense $\Fmat$. No proprietary constants appear. All group contributions are in volatility units and sum to \texttt{sigma\_p}.
+A tiny sketch of the final composition, mirroring the build with a dense $\Fmat$. All group contributions are in volatility units and sum to \texttt{sigma\_p}.
 
 {\footnotesize
 \begin{verbatim}

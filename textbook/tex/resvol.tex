@@ -1,0 +1,311 @@
+\documentclass[11pt]{article}
+
+%------------------------- fonts & encoding -----------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage[sc]{mathpazo}
+\linespread{1.06}
+\usepackage{microtype}
+
+%------------------------- layout ---------------------------------------------
+\usepackage[a4paper,margin=1.05in,marginparwidth=1.0in]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[most,breakable]{tcolorbox}
+
+%------------------------- palette --------------------------------------------
+\definecolor{crimson}{HTML}{A51C30}
+\definecolor{ink}{HTML}{1A1A1A}
+\definecolor{steel}{HTML}{2C5F8A}
+\definecolor{amber}{HTML}{9A6A00}
+\definecolor{teal}{HTML}{1F6F6B}
+\definecolor{paperlt}{HTML}{F7F4EF}
+
+%------------------------- section styling ------------------------------------
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\color{steel}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.6em}
+
+%------------------------- hyperref -------------------------------------------
+\usepackage[colorlinks=true,linkcolor=steel,citecolor=steel,urlcolor=crimson]{hyperref}
+
+%------------------------- theorem environments -------------------------------
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{exercise}{Exercise}[section]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[section]
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+%------------------------- callout boxes --------------------------------------
+\newtcolorbox{intuition}{
+  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=crimson, coltitle=paperlt, fonttitle=\bfseries, title={Intuition}}
+
+\newtcolorbox{pitfall}{
+  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=amber, coltitle=paperlt, fonttitle=\bfseries, title={Pitfall}}
+
+\newtcolorbox{keyresult}{
+  enhanced, breakable, colback=steel!6, colframe=steel, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=steel, coltitle=paperlt, fonttitle=\bfseries, title={Takeaway}}
+
+\newtcolorbox{observed}{
+  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=teal, coltitle=paperlt, fonttitle=\bfseries, title={Measured}}
+
+%------------------------- math operators -------------------------------------
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Corr}{corr}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\std}{std}
+\DeclareMathOperator*{\avg}{\mathbb{E}}
+\newcommand{\T}{^{\!\top}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\half}{\tfrac12}
+\newcommand{\wvec}{\mathbf{w}}
+\newcommand{\Xmat}{\mathbf{X}}
+\newcommand{\Fmat}{\mathbf{F}}
+\newcommand{\Vmat}{\mathbf{V}}
+\newcommand{\Umat}{\mathbf{U}}
+\newcommand{\Rmat}{\mathbf{R}}
+\newcommand{\Lam}{\boldsymbol{\Lambda}}
+\newcommand{\Del}{\boldsymbol{\Delta}}
+\newcommand{\fvec}{\mathbf{f}}
+
+%------------------------- title ----------------------------------------------
+\title{\vspace{-2.2em}
+  {\color{steel}\rule{\textwidth}{1.3pt}}\\[0.7em]
+  \Huge\bfseries Residual Volatility\\[0.35em]
+  \large\mdseries The standalone-risk factor --- how volatile a stock is beyond what its beta explains\\[0.4em]
+  {\color{steel}\rule{\textwidth}{0.7pt}}}
+\author{}
+\date{}
+
+%------------------------- watermark footer -----------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{black!45}MSCI Barra USE4 Imitation}
+\fancyfoot[R]{\footnotesize\color{black!45}\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+Residual Volatility is the standalone-risk factor: it measures how volatile a stock is \emph{beyond} the volatility its market sensitivity already accounts for. A high-beta stock is naturally jumpy because it amplifies market swings, but some stocks are turbulent for their own reasons -- idiosyncratic news, thin floats, fragile balance sheets -- on top of whatever their beta implies, and it is that extra, standalone volatility this factor isolates. USE4 builds it from a blend of three volatility views -- a daily-return standard deviation, the peak-to-trough range of the cumulative return path, and the volatility of the part of returns the market does not explain -- and then performs the step that defines the factor: it \emph{orthogonalises} the blend to Beta, regressing volatility on the Beta exposure and keeping only the residual. Without that step, volatility and beta would be nearly the same factor and the model could not tell market risk from standalone risk; with it, Residual Volatility becomes a clean, separate axis. The raw descriptor is a strictly positive, heavily right-skewed quantity, and the factor is the first in the model deliberately constructed to be independent of another.
+\end{abstract}
+
+\begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
+\textbf{How to read these notes.} We move from \emph{why} Residual Volatility is a factor to \emph{how} USE4 specifies it, then to the three volatility views it blends, with a deliberate stop at the orthogonalisation to Beta that defines the factor (Section~\ref{sec:ortho}) and at the pipeline order that makes it work (Section~\ref{sec:shape}). Read Section~\ref{sec:ortho} slowly; it carries the weight of the set. The numbers labelled as measured come from a single run of our personal build.
+
+\smallskip
+Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
+
+\smallskip
+\textbf{Reference material.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item External: Menchero, Orr \& Wang (2011), USE4 Empirical Notes (Appendix A) and Methodology Notes (Sec. 2.2--2.3).
+\end{itemize}
+\end{tcolorbox}
+
+\tableofcontents
+\bigskip
+
+\section{What Residual Volatility is, and why it is a factor}\label{sec:what}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State Residual Volatility as the volatility left after market sensitivity is accounted for.
+  \item Explain why standalone volatility is a distinct, shared risk.
+  \item Say in one sentence what the exposure is, before any standardisation.
+\end{itemize}
+
+A stock's total volatility has two sources. Part of it is inherited from the market: a stock that amplifies market moves -- a high beta -- will be volatile simply because the market is volatile. The rest is the stock's own -- the jumps on its earnings, the lurches on a lawsuit or a drug trial, the thin-float skittishness of a small name -- volatility that has nothing to do with the market's swings. Residual Volatility is that second part: the standalone, stock-specific turbulence that remains once the beta-driven component is set aside.
+
+It earns a factor because standalone volatility is itself a shared risk. The high-residual-volatility names -- the jumpy, headline-driven, often smaller stocks -- behave alike: they are the first to be dumped in a flight to quality and the ones whose idiosyncratic risk swamps their fundamentals. A model that captured only beta would miss this entire dimension, treating a placid utility and a volatile biotech of the same beta as equally risky. The exposure is a standardised blend of three volatility measures, with the part already explained by Beta removed.
+
+\begin{intuition}
+The whole factor answers one question: \emph{how turbulent is this stock on its own, over and above what its market sensitivity already implies?} Two stocks can have the same beta yet utterly different standalone risk -- one calm between market moves, the other constantly lurching on its own news. Residual Volatility rates the second higher. Hold that picture -- volatility \emph{net of beta} -- and the orthogonalisation below is just how the ``net of beta'' is enforced.
+\end{intuition}
+
+\begin{keyresult}
+The Residual Volatility exposure is a standardised blend of three volatility views, orthogonalised to Beta so it measures standalone risk rather than re-measuring market sensitivity. Everything that follows is about the three views and the orthogonalisation.
+\end{keyresult}
+
+\section*{Notation}
+\addcontentsline{toc}{section}{Notation}
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$\sigma^{\text{D}}_i$ & DASTD: exponentially-weighted std of daily excess returns \\
+$\text{CMRA}_i$ & cumulative range: peak-to-trough range of the 12-month cumulative return path \\
+$\sigma^{\text{H}}_i$ & HSIGMA: std of the residual from the beta regression (idiosyncratic volatility) \\
+$v_i$ & raw RESVOL composite, $0.75\,\sigma^{\text{D}}_i + 0.15\,\text{CMRA}_i + 0.10\,\sigma^{\text{H}}_i$ \\
+$\tilde v_i$ & the composite after the three-sigma trim \\
+$\beta^{\text{x}}_i$ & the standardised Beta exposure of stock $i$ (orthogonalisation target) \\
+$\gamma_t$ & per-date slope of $\tilde v$ regressed on $\beta^{\text{x}}$ (the beta component removed) \\
+$x_i$ & standardised RESVOL exposure (the orthogonalised residual) \\
+$w_i$ & cap weight of stock $i$ in the ESTU \\
+$\avg_{\text{cw}}, \std_{\text{ew}}$ & cap-weighted mean, equal-weighted standard deviation over the ESTU \\
+$Q_1,\dots,Q_5$ & quintiles of raw $v_i$, from calmest ($Q_1$) to most volatile ($Q_5$) \\
+ESTU & estimation universe (MSCI USA IMI proxy) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{How USE4 defines it}\label{sec:def}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Name the three volatility sub-descriptors and their weights.
+  \item State that the blend is orthogonalised to Beta, and the pipeline order.
+\end{itemize}
+
+USE4 builds Residual Volatility as a blend of three volatility sub-descriptors (Menchero, Orr \& Wang 2011, Empirical Notes, App. A): DASTD, the dominant ingredient, a daily-return standard deviation; CMRA, the range of the cumulative return path; and HSIGMA, the volatility of the market-model residual. They are weighted $0.75$, $0.15$, and $0.10$ -- DASTD carries three-quarters of the blend, with the cumulative range and the residual volatility filling in.
+
+The defining step comes after the blend. The composite is trimmed at three standard deviations (Methodology Notes, Sec. 2.2), then \emph{orthogonalised to Beta} -- regressed on the Beta exposure with the residual kept -- and only then standardised over the estimation universe to cap-weighted mean $0$ and equal-weighted standard deviation $1$ (Sec. 2.3). The order is deliberate: clip, then orthogonalise, then standardise. Like Beta and Momentum, the inputs are a stock's own daily returns, aligned point-in-time.
+
+\section{How we compute it: three views of volatility}\label{sec:compute}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Describe what each of DASTD, CMRA, and HSIGMA measures.
+  \item Explain why three views are blended rather than one.
+\end{itemize}
+
+The three sub-descriptors look at volatility from different angles.
+
+\textbf{DASTD} -- daily standard deviation -- is the plain measure: the exponentially-weighted standard deviation of the stock's daily excess returns over the trailing year, with recent days weighted more heavily. It is the scatter of the day-to-day returns, and at three-quarters of the blend it is the backbone of the factor.
+
+\textbf{CMRA} -- cumulative range -- looks not at daily scatter but at trajectory. It tracks the \emph{cumulative} return path over the past twelve months and takes its peak-to-trough range: how far apart the best and worst points of the year's compounded return were. A stock that doubled and then halved has an enormous cumulative range even if its individual days were unremarkable; CMRA catches the trending-and-reversing behaviour that a daily standard deviation, blind to order, would miss.
+
+\textbf{HSIGMA} -- historical sigma -- is the volatility of what the market leaves behind. It is the standard deviation of the \emph{residual} from the same market regression that produces Beta: the part of the stock's daily returns the market does not explain. HSIGMA is therefore already an idiosyncratic-volatility measure at the sub-descriptor level, a natural complement to the two total-volatility views. (If a stock has too few overlapping return-and-market days to fit the regression, HSIGMA's small weight renormalises onto the other two views.)
+
+Three views, because volatility is not one thing: DASTD measures scatter, CMRA measures the span of the journey, and HSIGMA measures what is left after the market. Blending them gives a sturdier read than any single statistic.
+
+\begin{pitfall}
+The three sub-descriptors live on different scales -- a daily standard deviation is a small number, a twelve-month cumulative range a much larger one -- so, exactly as for any multi-descriptor factor, they must be put on a common footing before they are weighted, or the largest-scale view would dominate regardless of its assigned weight. The blend is of comparably-scaled pieces, not of the raw statistics.
+\end{pitfall}
+
+\section{Orthogonalising to Beta}\label{sec:ortho}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Explain why raw volatility and Beta are strongly related.
+  \item Describe the orthogonalisation and what it leaves behind.
+\end{itemize}
+
+This is the step that makes Residual Volatility \emph{residual}. Volatility and beta are deeply entangled: a stock that amplifies the market is, almost by definition, more volatile, so the raw volatility composite is strongly correlated with the Beta exposure -- around $0.4$ in a typical cross-section (Figure~\ref{fig:resvol_dist}, left). Left untouched, the factor would be largely a second copy of Beta, and the model would face two nearly-collinear factors it could not disentangle: it could not say whether a portfolio's risk came from market sensitivity or from standalone turbulence, because the two descriptors would be telling almost the same story.
+
+The remedy is to orthogonalise. At each date the trimmed volatility composite is regressed on the Beta exposure, and the \emph{residual} of that regression -- the part of volatility that Beta does not predict -- becomes the factor. Mechanically the slope $\gamma_t$ of volatility on beta is estimated by a no-intercept regression over the estimation universe, weighted by the square root of market cap, and $\tilde v_i - \gamma_t\,\beta^{\text{x}}_i$ is carried forward. The effect is visible in Figure~\ref{fig:resvol_dist}: the strong upward tilt of volatility against beta on the left flattens markedly on the right, the correlation falling from about $0.4$ to about $0.12$. What remains is volatility scrubbed of its market-sensitivity component -- standalone risk.
+
+\begin{intuition}
+Picture two stocks that are equally volatile overall. One is volatile only because it has a high beta and the market has been stormy; strip the market out and it is calm. The other is volatile on its own news regardless of the market. Raw volatility cannot tell them apart -- both look turbulent. Orthogonalising to beta subtracts the market-explained share from each, so the first stock's residual volatility falls toward average while the second's stays high. The factor now measures the right thing: turbulence the market does not account for.
+\end{intuition}
+
+\begin{pitfall}
+Skip the orthogonalisation and Residual Volatility is not residual at all -- it is mostly Beta wearing a different label. Two near-collinear factors make the risk model's attribution unstable: it cannot cleanly split a portfolio's risk into market sensitivity and standalone volatility when the two columns nearly coincide. Note the orthogonality here is in the weighted fit: the weighted relationship to beta is removed exactly, while a small unweighted correlation can remain, which is expected and harmless.
+\end{pitfall}
+
+\section{The shape, and the pipeline order}\label{sec:shape}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Describe the raw descriptor's distribution.
+  \item Explain why the build clips before it orthogonalises and standardises.
+\end{itemize}
+
+The raw volatility composite is a strictly \emph{positive} quantity -- there is no such thing as negative volatility -- and it is heavily right-skewed: most stocks cluster at moderate volatility, with a long tail of very turbulent names (small caps, distressed firms, story stocks) stretching far to the right. The tail is heavy enough that the three-standard-deviation trim clips a little more than it does for a tamer descriptor.
+
+The order of operations matters, and USE4 fixes it: \emph{clip first, then orthogonalise, then standardise}. Clipping first keeps a handful of extreme-volatility outliers from distorting the beta-regression slope -- if those names were left in, they would tilt $\gamma_t$ and corrupt the residual for everyone. Orthogonalising second produces the residual. Standardising last puts the residual on the familiar mean-$0$, standard-deviation-$1$ scale. Reorder these and the factor changes: standardising before orthogonalising, or orthogonalising before clipping, would let outliers or scale leak into the regression.
+
+\begin{observed}
+On the build run the raw RESVOL composite is strictly positive with an ESTU median around $0.08$ -- a daily-volatility-scale number -- and is strongly right-skewed with a long, heavy tail of volatile names. The three-standard-deviation trim clips $\approx 2.4\%$ of ESTU rows, above the usual $0.5$--$2\%$ band, a direct symptom of that tail. The orthogonalisation to Beta removes the weighted beta relationship exactly; in a representative cross-section the raw volatility--beta correlation of $\approx 0.4$ falls to $\approx 0.12$ in the residual. After standardisation the cap-weighted mean is $0$ to machine precision and the equal-weighted standard deviation is $1.0$; $\approx 97\%$ of ESTU rows fall inside $[\pm 3]$, but only $\approx 87\%$ of all scored stocks do, the out-of-universe tail of volatile micro-caps sitting far out, since the standardisation is calibrated on the investable universe. Quintiles of the raw composite are strictly monotone, from a calm $Q_1 \approx 0.04$ to a turbulent $Q_5 \approx 0.28$, the top quintile sitting far above the fourth -- the signature of the heavy right tail. Month-over-month rank stability is high, Spearman $\rho \approx 0.93$. The deliverable is $\approx 1.6$M scored rows over $328$ dates and $\approx 15{,}800$ tickers.
+\end{observed}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/resvol_dist.png}
+\caption{Why Residual Volatility is orthogonalised, shown on one in-ESTU cross-section. \emph{Left:} the raw volatility composite rises clearly with the Beta exposure (correlation $\approx 0.4$) -- volatile stocks tend to be high-beta. \emph{Right:} after regressing volatility on Beta and keeping the residual, the relationship is largely gone (correlation $\approx 0.12$), leaving standalone volatility that is independent of market sensitivity. The weighted relationship is removed exactly; the small remaining tilt is the harmless unweighted residual.}
+\label{fig:resvol_dist}
+\end{figure}
+
+\section{Trim, orthogonalise, standardise}\label{sec:std}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Recite the three-step pipeline and the standardisation target.
+\end{itemize}
+
+Collecting the pipeline that produces the deliverable from the raw composite $v_i$:
+\[
+v_i \;\xrightarrow{\;\text{3$\sigma$ trim}\;}\; \tilde v_i
+\;\xrightarrow{\;\text{orthogonalise}\;}\; \tilde v_i - \gamma_t\,\beta^{\text{x}}_i
+\;\xrightarrow{\;\text{standardise}\;}\; x_i,
+\qquad
+x_i = \frac{(\tilde v_i - \gamma_t\beta^{\text{x}}_i) - \avg_{\text{cw}}(\cdot)}{\std_{\text{ew}}(\cdot)}.
+\]
+The cap-weighted centring measures standalone volatility against the dollar-weighted market, and the equal-weighted scaling fixes the spread. Because the raw composite is so right-skewed, the trim clips almost entirely from the high-volatility end before the regression and standardisation ever see those extremes.
+
+\begin{exercise}
+Two stocks each have the same total daily-return volatility. Stock A has a beta of $1.6$; stock B a beta of $0.7$. After orthogonalising to Beta, which one will tend to have the \emph{higher} residual volatility, and why? (Hint: which stock's volatility is more ``explained'' by its market sensitivity?)
+\end{exercise}
+
+\begin{exercise}
+Explain why the build clips outliers \emph{before} the orthogonalisation regression rather than after. What could a few extreme-volatility names do to the estimated slope $\gamma_t$ if they were left in?
+\end{exercise}
+
+\begin{exercise}
+CMRA takes the peak-to-trough range of the cumulative return path, while DASTD takes the scatter of daily returns. Describe a stock whose CMRA would be large but whose DASTD would be modest, and one where the reverse holds. (Hint: think about a steady trend versus a choppy flat year.)
+\end{exercise}
+
+\section{Summary, and one caveat}\label{sec:summary}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Recite the Residual Volatility build from daily returns to standardised exposure.
+  \item State the central limitation and what would address it.
+\end{itemize}
+
+The build, end to end: form three volatility views -- a daily-return standard deviation (DASTD), the peak-to-trough range of the cumulative return path (CMRA), and the standard deviation of the market-model residual (HSIGMA) -- on a common scale; blend them $0.75/0.15/0.10$, renormalising if HSIGMA is unavailable; trim the composite at three standard deviations; orthogonalise it to the Beta exposure, keeping the residual so the factor measures standalone rather than market-driven volatility; and standardise to cap-weighted mean $0$, equal-weighted standard deviation $1$. The output is a strictly positive, right-skewed standalone-risk factor, built to be independent of Beta.
+
+\begin{keyresult}
+Residual Volatility is volatility net of beta. The two computations that matter most are the blend of three complementary volatility views and -- above all -- the orthogonalisation to Beta, which is what separates standalone risk from a second reading of market sensitivity.
+\end{keyresult}
+
+\begin{pitfall}
+One honest limitation matters most. The factor is orthogonalised to Beta but not to Size, yet volatility is mechanically tied to size as well -- small caps are more volatile almost by construction -- so some of what survives as ``residual'' volatility is really a size effect in disguise, and the factor is only as clean as the single orthogonalisation makes it. A second, smaller point is that the descriptor is backward-looking realised volatility: it reads the past year and lags a regime change, marking a newly-turbulent stock calm until the window fills. The clear levers are to orthogonalise against Size as well as Beta, and to blend in a forward-looking, option-implied volatility measure to reduce the lag.
+\end{pitfall}
+
+\begin{remark}
+None of this changes the factor's place in the model: Residual Volatility remains the standalone-risk dimension, deliberately built to sit beside Beta rather than on top of it. The caveat is about \emph{how completely} the orthogonalisation isolates standalone risk, not about whether standalone volatility is a real and distinct risk.
+\end{remark}
+
+\begin{center}\small\itshape
+References: Menchero, Orr \& Wang (2011), \textit{The Barra US Equity Model (USE4)} --- Empirical Notes (Appendix A) and Methodology Notes (Sec. 2.2--2.3). ESTU treated as an MSCI USA IMI proxy; measured quantities are from a personal build run.
+\end{center}
+
+\end{document}
