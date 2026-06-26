@@ -1,0 +1,347 @@
+\documentclass[11pt]{article}
+
+%------------------------- fonts & encoding -----------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage[sc]{mathpazo}
+\linespread{1.06}
+\usepackage{microtype}
+
+%------------------------- layout ---------------------------------------------
+\usepackage[a4paper,margin=1.05in,marginparwidth=1.0in]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[most,breakable]{tcolorbox}
+
+%------------------------- palette --------------------------------------------
+\definecolor{crimson}{HTML}{A51C30}
+\definecolor{ink}{HTML}{1A1A1A}
+\definecolor{steel}{HTML}{2C5F8A}
+\definecolor{amber}{HTML}{9A6A00}
+\definecolor{teal}{HTML}{1F6F6B}
+\definecolor{paperlt}{HTML}{F7F4EF}
+
+%------------------------- section styling ------------------------------------
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\color{steel}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.6em}
+
+%------------------------- hyperref -------------------------------------------
+\usepackage[colorlinks=true,linkcolor=steel,citecolor=steel,urlcolor=crimson]{hyperref}
+
+%------------------------- theorem environments -------------------------------
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{exercise}{Exercise}[section]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[section]
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+%------------------------- callout boxes --------------------------------------
+\newtcolorbox{intuition}{
+  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=crimson, coltitle=paperlt, fonttitle=\bfseries, title={Intuition}}
+
+\newtcolorbox{pitfall}{
+  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=amber, coltitle=paperlt, fonttitle=\bfseries, title={Pitfall}}
+
+\newtcolorbox{keyresult}{
+  enhanced, breakable, colback=steel!6, colframe=steel, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=steel, coltitle=paperlt, fonttitle=\bfseries, title={Takeaway}}
+
+\newtcolorbox{observed}{
+  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=teal, coltitle=paperlt, fonttitle=\bfseries, title={Measured}}
+
+%------------------------- math operators -------------------------------------
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Corr}{corr}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\std}{std}
+\DeclareMathOperator*{\avg}{\mathbb{E}}
+\newcommand{\T}{^{\!\top}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\half}{\tfrac12}
+\newcommand{\wvec}{\mathbf{w}}
+\newcommand{\Xmat}{\mathbf{X}}
+\newcommand{\Fmat}{\mathbf{F}}
+\newcommand{\Vmat}{\mathbf{V}}
+\newcommand{\Umat}{\mathbf{U}}
+\newcommand{\Rmat}{\mathbf{R}}
+\newcommand{\Lam}{\boldsymbol{\Lambda}}
+\newcommand{\Del}{\boldsymbol{\Delta}}
+\newcommand{\fvec}{\mathbf{f}}
+
+%------------------------- title ----------------------------------------------
+\title{\vspace{-2.2em}
+  {\color{steel}\rule{\textwidth}{1.3pt}}\\[0.7em]
+  \Huge\bfseries Portfolio Risk Decomposition\\[0.35em]
+  \large\mdseries Assembling the model into one number --- and splitting it into where the risk comes from\\[0.4em]
+  {\color{steel}\rule{\textwidth}{0.7pt}}}
+\author{}
+\date{}
+
+%------------------------- watermark footer -----------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{black!45}MSCI Barra USE4 Imitation}
+\fancyfoot[R]{\footnotesize\color{black!45}\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+Every preceding stage built one piece of the risk model: the estimation universe, the exposures, the cross-sectional regression that turns them into factor returns, the factor covariance, and the specific-risk diagonal. This final stage puts the pieces together and reads the answer. It computes a portfolio's forecast risk, $\sigma_p^2 = \wvec\T\Xmat\Fmat\Xmat\T\wvec + \wvec\T\Del\wvec$, and -- more usefully than the single number -- it \emph{decomposes} that risk into where it comes from: how much is factor risk versus stock-specific, which factors carry it, and, against a benchmark, how much is active tracking error. The mathematics rests on one elegant fact: although volatility is not additive -- you cannot add the risks of two positions -- a theorem of Euler lets total risk be split into per-position and per-factor \emph{contributions} that do sum, exactly, to the total. That turns an opaque single number into a complete, honest budget of risk. This stage is also the model's first true end-to-end test: only here do the separately-built exposures, factor covariance, and specific risk have to \emph{compose} into a correct portfolio forecast, and the test is whether predicted risk matches realised risk across a range of portfolios. It does.
+\end{abstract}
+
+\begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
+\textbf{How to read these notes.} We assemble the portfolio risk number (Section~\ref{sec:total}), then spend the heart of the set on how it is attributed -- the Euler decomposition into additive contributions (Section~\ref{sec:euler}) and the grouping into country, industry, style, and specific risk (Section~\ref{sec:groups}) -- before reading what the model actually says about real portfolios (Section~\ref{sec:read}). Read Section~\ref{sec:euler} slowly; it is why risk can be budgeted at all. The numbers labelled as measured come from a single run of our personal build.
+
+\smallskip
+Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
+
+\smallskip
+\textbf{Reference material.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item External: Menchero, Orr \& Wang (2011), USE4 Methodology Notes (Sec. 2, 5).
+\end{itemize}
+\end{tcolorbox}
+
+\tableofcontents
+\bigskip
+
+\section{What decomposition is, and why it is the payoff}\label{sec:what}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State what this stage computes from the assembled model.
+  \item Explain why the decomposition, not the single risk number, is the point.
+\end{itemize}
+
+This is where the model is finally used. Up to now each component has been built and validated on its own: the exposure matrix $\Xmat$, the factor covariance $\Fmat$, the specific-risk diagonal $\Del$. None of them is a risk forecast by itself. The portfolio-risk identity assembles them,
+\[
+\sigma_p^2 \;=\; \underbrace{\wvec\T\Xmat\Fmat\Xmat\T\wvec}_{\text{factor risk}} \;+\; \underbrace{\wvec\T\Del\wvec}_{\text{specific risk}},
+\]
+and produces, for any set of portfolio weights $\wvec$, a single forecast volatility $\sigma_p$. That number is useful, but it is also opaque: it does not say whether the risk is a market bet or a stock bet, which factors drive it, or how much of it is a deliberate tilt against a benchmark. The decomposition answers those questions.
+
+It is worth dwelling on why the breakdown matters more than the total. A risk number you cannot attribute is a smoke alarm with no location: it tells you something is hot but not where. A portfolio manager needs to know that, say, eighty percent of the tracking error is a single style bet, or that a position thought to be diversifying is in fact the largest contributor to risk. The decomposition turns $\sigma_p$ into a budget -- a list of sources that sum to the total -- and a budget is what you can actually manage. This stage is also the model's first genuine end-to-end test: only when $\Xmat$, $\Fmat$, and $\Del$ are composed does it become possible to ask whether predicted risk matches realised risk, and that is the ultimate check that the whole pipeline works.
+
+\begin{intuition}
+The single number $\sigma_p$ is the total on a bill; the decomposition is the itemisation. Two portfolios can both forecast $20\%$ volatility and be completely different animals -- one a broad market exposure, the other a market-neutral style bet whose risk is concentrated almost entirely in its style factor. The total cannot tell them apart; the itemised contributions can, and that is what a manager acts on.
+\end{intuition}
+
+\begin{keyresult}
+This stage assembles $\sigma_p^2=\wvec\T\Xmat\Fmat\Xmat\T\wvec+\wvec\T\Del\wvec$ and decomposes it: factor versus specific, contribution by factor group, and active tracking error against a benchmark. The itemised budget, not the single number, is the payoff -- and composing the parts is the model's first end-to-end test.
+\end{keyresult}
+
+\section*{Notation}
+\addcontentsline{toc}{section}{Notation}
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$\wvec$ & portfolio weights over the coverage stocks \\
+$x=\Xmat\T\wvec$ & the portfolio's factor exposures (a $68$-vector) \\
+$\Vmat$ & implied asset covariance $\Xmat\Fmat\Xmat\T+\Del$ (never formed densely) \\
+$\sigma_p$ & total portfolio risk $\sqrt{\wvec\T\Vmat\wvec}$ \\
+$\text{MCTR}_i$ & marginal contribution to risk of asset $i$: $\partial\sigma_p/\partial w_i = (\Vmat\wvec)_i/\sigma_p$ \\
+$\text{CTR}_i$ & contribution to risk of asset $i$: $w_i\,\text{MCTR}_i$ (these sum to $\sigma_p$) \\
+$\text{CTR}_k$ & contribution of factor $k$: $x_k(\Fmat x)_k/\sigma_p$ \\
+$\wvec_b,\ \wvec_a$ & benchmark weights (cap-weighted ESTU market) and active weights $\wvec_p-\wvec_b$ \\
+$b$ & bias statistic: realised $/$ predicted portfolio risk (target $\approx 1$) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Total risk: the factor/specific split}\label{sec:total}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Compute total risk and its factor/specific split from the model pieces.
+  \item Explain why the dense asset covariance is never formed.
+\end{itemize}
+
+Start with one stock. Its forecast variance has the same two parts as a portfolio's: a factor part, $x_i\T\Fmat x_i$ where $x_i$ is the stock's row of exposures, and a specific part, $\sigma_{\text{spec},i}^2$. Its total volatility is the quadrature sum $\sqrt{x_i\T\Fmat x_i + \sigma_{\text{spec},i}^2}$ -- the two pieces add as variances, not as volatilities, because the factor and specific returns are uncorrelated by construction. Collected over all stocks, these are the asset total risks.
+
+For a portfolio with weights $\wvec$, first map to factor space, $x=\Xmat\T\wvec$ -- the portfolio's net exposure to each factor -- and then
+\[
+\sigma_p^2 \;=\; \underbrace{x\T\Fmat x}_{\text{factor variance}} \;+\; \underbrace{\textstyle\sum_i w_i^2\,\sigma_{\text{spec},i}^2}_{\text{specific variance}},
+\qquad
+\sigma_p^{\text{fac}}=\sqrt{x\T\Fmat x},\quad
+\sigma_p^{\text{spec}}=\sqrt{\textstyle\sum_i w_i^2\sigma_{\text{spec},i}^2}.
+\]
+The factor variance runs through the small $68\times68$ matrix $\Fmat$; the specific variance is a simple weighted sum of the diagonal, and the cross terms vanish because specific returns are mutually uncorrelated -- the diagonal assumption of the specific-risk model. The split $\sigma_p = \sqrt{(\sigma_p^{\text{fac}})^2 + (\sigma_p^{\text{spec}})^2}$ is the first and coarsest cut of the decomposition: how much of the risk is shared (factor) and how much is the portfolio's own (specific).
+
+A practical point hides in the algebra. The implied asset covariance $\Vmat = \Xmat\Fmat\Xmat\T + \Del$ is an $N\times N$ matrix over thousands of stocks -- far too large to form, store, or invert comfortably. The factor structure is precisely what lets us avoid it: every quantity we need is computed by passing weights through the thin exposure matrix and the small factor covariance, $\Vmat\wvec = \Xmat\Fmat(\Xmat\T\wvec) + \Del\wvec$, which costs work proportional to (stocks $\times$ factors), not (stocks squared). The factor model is a dimension reduction, and this is where the reduction pays off.
+
+\begin{pitfall}
+Risk adds as \emph{variance}, never as volatility. A portfolio whose factor volatility is $16\%$ and specific volatility $9\%$ does not have $25\%$ total volatility; it has $\sqrt{16^2+9^2}\approx 18\%$. Adding volatilities double-counts -- the quadrature sum is what the independence of factor and specific returns dictates. The same trap recurs at every level of the decomposition: the things that add are variances and Euler contributions, not the volatilities themselves.
+\end{pitfall}
+
+\section{Attribution by Euler's theorem}\label{sec:euler}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Explain why volatility, though not additive, still decomposes into additive contributions.
+  \item Define marginal and component contributions to risk and state that they sum to total risk.
+\end{itemize}
+
+Here is the central difficulty and its elegant resolution. We want to say ``position $i$ accounts for such-and-such of the portfolio's risk,'' with the parts summing to the whole. But risk is a square root of a quadratic -- $\sigma_p=\sqrt{\wvec\T\Vmat\wvec}$ -- a thoroughly non-linear, non-additive function of the weights. Naively there is no reason a nonlinear quantity should break into a clean sum of per-asset pieces. Yet it does, and the reason is a property the volatility function happens to have: it is \emph{homogeneous of degree one}. Double every weight and you double the risk, $\sigma_p(\alpha\wvec)=\alpha\,\sigma_p(\wvec)$ -- scaling a portfolio scales its volatility proportionally.
+
+Euler's theorem on homogeneous functions says exactly that such a function equals the sum of each variable times its own partial derivative:
+\[
+\sigma_p \;=\; \sum_i w_i\,\frac{\partial \sigma_p}{\partial w_i}.
+\]
+Each term is a genuine contribution. The partial derivative
+\[
+\text{MCTR}_i \;=\; \frac{\partial \sigma_p}{\partial w_i} \;=\; \frac{(\Vmat\wvec)_i}{\sigma_p} \;=\; \frac{(\Xmat\Fmat x + \Del\wvec)_i}{\sigma_p}
+\]
+is the \emph{marginal} contribution to risk -- the rate at which total risk changes as you add a little to position $i$, equivalently the covariance of asset $i$'s return with the whole portfolio's, divided by $\sigma_p$. Multiplying by the holding gives the \emph{component} contribution $\text{CTR}_i = w_i\,\text{MCTR}_i$, and Euler guarantees these sum exactly to the total:
+\[
+\sum_i \text{CTR}_i \;=\; \sum_i w_i\,\frac{(\Vmat\wvec)_i}{\sigma_p} \;=\; \frac{\wvec\T\Vmat\wvec}{\sigma_p} \;=\; \frac{\sigma_p^2}{\sigma_p} \;=\; \sigma_p .
+\]
+So although you cannot add volatilities, you \emph{can} add these contributions, and they form a complete budget of the portfolio's risk down to the individual position. This is the mathematical engine of all risk attribution.
+
+\begin{intuition}
+Marginal contribution answers ``if I add a dollar here, how much does total risk move?'' -- and that depends not on the position's own volatility alone but on how it covaries with everything else you hold. A position that hedges the rest can have a \emph{negative} marginal contribution: adding to it lowers total risk. The component contribution then scales that marginal rate by how much you actually hold, and because risk scales linearly with portfolio size (homogeneity), those scaled pieces close exactly to the total. Euler's theorem is the reason a non-additive quantity nonetheless has an honest, exhaustive itemisation.
+\end{intuition}
+
+\begin{keyresult}
+Volatility is homogeneous of degree one in the weights, so by Euler's theorem total risk equals the sum of each position's weight times its marginal contribution. The component contributions $\text{CTR}_i=w_i\,\text{MCTR}_i$ are additive and sum exactly to $\sigma_p$ -- a complete risk budget despite risk being non-additive.
+\end{keyresult}
+
+\section{Attribution by factor group}\label{sec:groups}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Write the per-factor contribution and group it into country, industry, and style.
+  \item Combine it with the specific contribution into a complete budget.
+\end{itemize}
+
+The same Euler logic applies in factor space, and there it is more illuminating, because the sixty-eight factors are interpretable where ten thousand stocks are not. The factor variance $x\T\Fmat x$ decomposes by factor: the contribution of factor $k$ is
+\[
+\text{CTR}_k \;=\; \frac{x_k\,(\Fmat x)_k}{\sigma_p},
+\]
+which is the Barra ``exposure $\times$ covariance-with-the-portfolio'' form -- the portfolio's loading $x_k$ on factor $k$ times how that factor co-moves with the whole portfolio's factor position, scaled by $\sigma_p$. Adding the specific contribution $\sigma_p^{\text{spec},2}/\sigma_p$ completes the identity:
+\[
+\sum_{k} \text{CTR}_k \;+\; \frac{\sigma_p^{\text{spec},2}}{\sigma_p} \;=\; \frac{x\T\Fmat x + \sigma_p^{\text{spec},2}}{\sigma_p} \;=\; \sigma_p .
+\]
+Because the factors come in natural families -- the country factor, the $55$ industries, the $12$ styles -- the per-factor contributions are summed into \emph{group} contributions: country, industry, style, and specific. Those four numbers add to $\sigma_p$ and form the headline budget: at a glance, how much of a portfolio's risk is market exposure, how much is industry tilts, how much is style bets, and how much is stock-specific. It is this grouped budget that the figures and tables below report.
+
+\begin{pitfall}
+A factor (or asset) contribution can be \emph{negative}, and that is information, not an error. A position or factor that is negatively correlated with the rest of the portfolio reduces total risk, so its CTR is below zero; the positive contributors must then exceed $\sigma_p$ for the budget to close. Reading only the positive contributions, or taking absolute values, breaks the additivity and hides the hedges -- the negative entries are exactly where diversification is coming from.
+\end{pitfall}
+
+\section{Active risk and tracking error}\label{sec:active}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Define active weights and tracking error against a benchmark.
+\end{itemize}
+
+Most portfolios are run against a benchmark, and what matters then is not total risk but \emph{active} risk -- the risk of deviating from the benchmark. The machinery is identical; only the input changes. Form the active weights $\wvec_a = \wvec_p - \wvec_b$, the portfolio minus the benchmark, and feed them through exactly the same formulas. The resulting volatility is the \emph{tracking error}, and its decomposition tells you which factor and specific bets your deviations from the benchmark are making.
+
+The benchmark here is the cap-weighted estimation universe -- the model's own market, which (as the cross-sectional regression showed) the country factor reproduces almost exactly. A telling consequence follows: the cap-weighted market portfolio has essentially \emph{zero} active risk against itself and is almost pure country-factor risk in absolute terms, while a dollar-neutral style bet -- long one style, short its opposite, netting to no market exposure -- has little total country risk but large tracking error concentrated in that style. The same formulas, applied to active weights, make those statements quantitative.
+
+\begin{intuition}
+Total risk asks ``how much could my portfolio move?''; active risk asks ``how much could I move \emph{relative to my benchmark}?'' Subtracting the benchmark's weights cancels the shared market exposure, leaving only the bets you actually took. A closet indexer has tiny tracking error however large its total risk; a market-neutral fund has zero market risk but all of its risk is active. Active risk is the decomposition of the difference, and it is what an indexed mandate is judged on.
+\end{intuition}
+
+\section{What the model says}\label{sec:read}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Read the grouped attribution for a range of portfolios.
+  \item Confirm the model attributes risk to the economically right source.
+\end{itemize}
+
+The decomposition is most convincing when it tells you what you already know to be true about familiar portfolios, in the model's own numbers (Figure~\ref{fig:riskdecomp}). The cap-weighted market is overwhelmingly \emph{country} risk -- it \emph{is} the market factor -- with a forecast volatility in the mid-teens annualised and almost nothing from industries, styles, or specific risk. An equal-weighted portfolio is mostly country but carries a substantial \emph{style} share, because equal-weighting is implicitly a tilt toward smaller names. The dollar-neutral style long--shorts are the cleanest check: a momentum long--short is almost entirely \emph{style} risk and essentially market-neutral; the value and size long--shorts are likewise style-dominated, though they retain a meaningful country share -- roughly a third to two-fifths -- alongside their larger style risk. The model attributes each portfolio's risk to the source a manager would name -- the surest sign that the assembled exposures, factor covariance, and specific risk are working together.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/risk_decomp_attrib.png}
+\caption{Factor-group risk attribution for a set of test portfolios on one date: each bar is the share of $\sigma_p$ contributed by country, industry, style, and specific risk (the four shares sum to one), with the annualised total volatility labelled at right. The cap-weighted market is almost all country risk (it is the market factor); the equal-weight portfolio adds a style share from its small-cap tilt; and the dollar-neutral style long--shorts are dominated by their own style -- momentum almost purely so (near country-neutral), value and size style-led but still carrying a sizeable country share. The model attributes risk where a manager would expect it.}
+\label{fig:riskdecomp}
+\end{figure}
+
+\begin{observed}
+On the build run the stage decomposes the risk of a canonical portfolio set over $288$ month-ends, and at the latest date the annualised picture is exactly as expected: the cap-weighted market forecasts $\approx 17\%$ volatility, $\approx 96\%$ of it country risk; the equal-weight portfolio $\approx 21\%$, with about a third its risk in style; the momentum long--short $\approx 21\%$ and $\approx 77\%$ style (market-neutral); the value and size long--shorts likewise style-dominated ($\approx 58\%$ and $\approx 59\%$ style), though each still carries a meaningful country share ($\approx 37\%$ and $\approx 39\%$). Against the market benchmark the tracking errors tell the same story: $\approx 0\%$ for the market itself, $\approx 13\%$ for the equal-weight portfolio, and $\approx 23\%$, $\approx 31\%$, and $\approx 23\%$ for the momentum, value, and size long--shorts. Asset total risk runs at a median of $\approx 43\%$ per year over the whole coverage universe and $\approx 36\%$ over the ESTU, the higher coverage figure reflecting the small names' large specific risk.
+\end{observed}
+
+\section{Does it compose? the end-to-end test}\label{sec:valid}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State the additivity checks and the end-to-end bias test.
+\end{itemize}
+
+Two kinds of check matter here. The first is internal consistency, and it holds to machine precision: the factor and specific variances reconstruct the total exactly, and the Euler contributions -- both per-asset and per-factor-group -- sum to $\sigma_p$ to within rounding. These are guarantees of the mathematics, and confirming them confirms the implementation is faithful to it.
+
+The second is the real test, the one no earlier stage could run: do the composed pieces \emph{forecast} portfolio risk? Standardising each test portfolio's realised return by its predicted $\sigma_p$ over the backtest gives a bias statistic that should sit near one. It does -- the portfolios land in a tolerance band around one, running a touch \emph{below} predicted (a mild over-forecast of risk inherited from the factor covariance's slightly conservative calibration, and felt most by the near-pure-factor style bets). This is the first evidence that the exposures, the factor covariance, and the specific-risk diagonal -- each built and validated in isolation -- combine into a portfolio risk forecast that is right not just in structure but in level. With that, the model is complete: every piece is built, and the pieces compose.
+
+\begin{observed}
+On the build run the internal identities hold to machine precision -- the factor/specific variances reconstruct the total to $\approx 10^{-16}$, and the per-asset and per-group contributions sum to $\sigma_p$ to $\approx 10^{-16}$. End-to-end, the portfolio bias statistics all sit in a tolerance band around one: the cap-weighted market $\approx 0.91$, equal-weight $\approx 0.94$, and the style long--shorts $\approx 0.78$--$0.86$ -- a mild over-forecast (realised risk below predicted) tracking the factor model's $\approx 0.95$ calibration, strongest for the dollar-neutral tilts that are nearly pure factor bets. The composition is sound.
+\end{observed}
+
+\begin{exercise}
+A portfolio has factor volatility $12\%$ and specific volatility $5\%$ (annualised). Compute its total volatility. Why is the answer not $17\%$, and what would have to be true for it to equal $17\%$?
+\end{exercise}
+
+\begin{exercise}
+A long-only manager adds a small short position that is strongly negatively correlated with the rest of the book. Explain why this position's marginal contribution to risk can be negative, and what that implies for the sum of the other positions' contributions (which must still total $\sigma_p$).
+\end{exercise}
+
+\begin{exercise}
+The cap-weighted market portfolio shows $\approx 96\%$ of its risk as country and essentially zero tracking error against the cap-weighted benchmark. Explain both facts in one or two sentences, referring to what the country factor represents and how active weights are formed.
+\end{exercise}
+
+\section{Summary, and one caveat}\label{sec:summary}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Recite how a portfolio's risk is computed and decomposed.
+  \item State the central limitation of the whole assembled model.
+\end{itemize}
+
+The stage, end to end: assemble the portfolio's factor exposures $x=\Xmat\T\wvec$; compute total risk $\sigma_p=\sqrt{x\T\Fmat x + \sum_i w_i^2\sigma_{\text{spec},i}^2}$, split into factor and specific; attribute it by Euler's theorem into per-asset and per-factor contributions that sum exactly to $\sigma_p$; group the factor contributions into country, industry, style, and specific; and, against the cap-weighted market benchmark, repeat on active weights to get tracking error and its attribution. The implied asset covariance is never formed -- everything passes through the thin exposures and the small factor covariance. The result is a complete, additive risk budget for any portfolio, and the validation that predicted matches realised is the model's first proof that its separately-built pieces compose.
+
+\begin{keyresult}
+Portfolio risk is $\sigma_p=\sqrt{\wvec\T\Xmat\Fmat\Xmat\T\wvec+\wvec\T\Del\wvec}$, decomposed by Euler's theorem into additive contributions -- factor versus specific, by factor group, total versus active. This is the model's purpose realised: not just how much risk, but exactly where it comes from.
+\end{keyresult}
+
+\begin{pitfall}
+One honest limitation stands over the whole assembled model: the risk forecast is only as good as its inputs, and it is a forecast of \emph{normal-times} covariance. The decomposition is exact arithmetic on $\Xmat$, $\Fmat$, and $\Del$, so it inherits everything those carry -- the factor covariance's mild conservatism, the specific-risk diagonal's assumption that idiosyncratic returns are uncorrelated, the exposures' point-in-time approximations. In a crisis, correlations converge toward one in ways even the volatility-regime layers only partly anticipate, and the diagonal specific-risk assumption understates the joint blow-ups of genuinely linked names. The decomposition will still sum exactly to whatever $\sigma_p$ the inputs imply -- its arithmetic never fails -- but that $\sigma_p$ is a model's central estimate, not a promise. Used as a budget for understanding and managing risk it is exactly the right tool; read as a guarantee about the worst month it is not, and no factor risk model is.
+\end{pitfall}
+
+\begin{remark}
+This completes the model. The estimation universe set the stage; the style, industry, and country exposures described every stock; the cross-sectional regression turned those descriptions into factor returns and specific residuals; the factor covariance and the specific-risk diagonal forecast their second moments; and this stage composed them into portfolio risk and its attribution. From a universe of stocks and their prices, end to end, the pipeline now answers the question it was built for: how much will this portfolio move, and where does that risk come from?
+\end{remark}
+
+\begin{center}\small\itshape
+References: Menchero, Orr \& Wang (2011), \textit{The Barra US Equity Model (USE4)} --- Methodology Notes (Sec. 2, 5). ESTU treated as an MSCI USA IMI proxy; measured quantities are from a personal build run.
+\end{center}
+
+\end{document}

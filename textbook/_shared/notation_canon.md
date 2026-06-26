@@ -20,7 +20,7 @@ Canonical symbol -> meaning list for the USE4 lecture-note library. Every set dr
 | $\Umat$ | specific-risk / orthogonal matrix | (operators) |
 | $\Rmat$ ($R$) | returns / correlation matrix | (operators) |
 | $\Lam$ | eigenvalue / loading matrix | (operators) |
-| $\Del$ ($\Delta$) | difference / increment | (operators) |
+| $\Del$ ($\Delta$) | specific-variance diagonal, $\Del=\diag(\sigma^{\text{spec},2}_n)$ | overview_risk_model |
 | $\fvec$ ($f$) | factor-return vector | (operators) |
 | $t$ | a monthly signal date (rebalance date) | estimation_universe |
 | $U_t$ | coverage universe: all stocks alive at $t$ | estimation_universe |
@@ -80,7 +80,25 @@ Canonical symbol -> meaning list for the USE4 lecture-note library. Every set dr
 | $r_{i,\tau},\ r_{m,\tau}$ | excess daily return of stock $i$ / of the cap-weighted market on day $\tau$ | beta |
 | $\omega_\tau$ | exponential time-decay weight $\exp(-\ln2\,(t-\tau)/h)$, half-life $h$ | beta |
 | $\beta_i$ | raw market beta: time-weighted regression slope $\Cov_\omega(r_i,r_m)/\Var_\omega(r_m)$ | beta |
+| $h$ | half-life of an exponential time-decay weight | beta |
 | $L,\ T,\ W$ | momentum lag ($\approx 21$d), window length ($\approx 504$d), full-window weight sum | mom |
 | $m_i$ | raw momentum: lagged exp-weighted mean of excess log returns, $(\sum_\tau\omega_\tau r_{i,\tau})/W$ | mom |
 | $\sigma^{D}_i,\ \text{CMRA}_i,\ \sigma^{H}_i$ | RESVOL sub-descriptors: daily-return std / cumulative-path range / market-residual std | resvol |
 | $v_i$ | raw RESVOL composite $0.75\sigma^{D}_i+0.15\text{CMRA}_i+0.10\sigma^{H}_i$, then orthogonalised to beta | resvol |
+| $\gamma_t$ | per-date slope from orthogonalising one standardised exposure on another (the removed component) | resvol |
+| $\beta^{z}_i,\ (\beta^{z}_i)^3$ | standardised Beta exposure and its cube | nlb |
+| $n_i$ | raw NLB: orthogonalisation residual $(\beta^{z}_i)^3-\gamma_t\beta^{z}_i$ | nlb |
+| $s^{z}_i,\ (s^{z}_i)^3$ | standardised Size exposure and its cube | nls |
+| $n_i$ | raw NLS: orthogonalisation residual $(s^{z}_i)^3-\gamma_t s^{z}_i$, then winsorised | nls |
+| $X^{\text{ind}}_{ij}$ | industry exposure: $1$ if stock $i$ is in industry $j$, else $0$ (dummy) | industries |
+| $f^{\text{ind}}_j,\ w_j$ | industry $j$'s factor return and cap weight; constraint $\sum_j w_j f^{\text{ind}}_j=0$ | industries |
+| $J$ | number of industry factors ($=55$ in this build) | industries |
+| $v_i$ | cross-sectional regression weight $\propto\sqrt{\text{mcap}_i}$ (normalised per date) | csr |
+| $f_c$ | country (market) factor return; country exposure $\equiv 1$ for all stocks | csr |
+| $\Vmat_\ell$ | lag-$\ell$ autocovariance of daily factor returns (Newey--West input) | fcov |
+| $b_k$ | bias statistic: realised $/$ predicted risk of factor/eigenfactor $k$ (target $\approx 1$) | fcov |
+| $B_t,\ \lambda_{\text{vol}}$ | daily cross-sectional bias; volatility-regime multiplier $\sqrt{\operatorname{EWMA}(B_t)}$ | fcov |
+| $\sigma^{\text{spec}}_n$ | forecast specific (idiosyncratic) volatility; $\Del=\diag(\sigma^{\text{spec},2}_n)$ | specific risk |
+| $\gamma_n$ | specific-risk coverage coefficient (history credibility: time-series vs structural) | specific risk |
+| $\text{MCTR}_i,\ \text{CTR}_i$ | marginal / component contribution to risk; $\sum_i\text{CTR}_i=\sigma_p$ (Euler) | risk decomp |
+| $\wvec_a=\wvec_p-\wvec_b$ | active weights vs the cap-weighted ESTU benchmark; gives tracking error | risk decomp |

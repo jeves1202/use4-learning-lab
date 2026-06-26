@@ -1,0 +1,351 @@
+\documentclass[11pt]{article}
+
+%------------------------- fonts & encoding -----------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage[sc]{mathpazo}
+\linespread{1.06}
+\usepackage{microtype}
+
+%------------------------- layout ---------------------------------------------
+\usepackage[a4paper,margin=1.05in,marginparwidth=1.0in]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[most,breakable]{tcolorbox}
+
+%------------------------- palette --------------------------------------------
+\definecolor{crimson}{HTML}{A51C30}
+\definecolor{ink}{HTML}{1A1A1A}
+\definecolor{steel}{HTML}{2C5F8A}
+\definecolor{amber}{HTML}{9A6A00}
+\definecolor{teal}{HTML}{1F6F6B}
+\definecolor{paperlt}{HTML}{F7F4EF}
+
+%------------------------- section styling ------------------------------------
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\color{steel}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.6em}
+
+%------------------------- hyperref -------------------------------------------
+\usepackage[colorlinks=true,linkcolor=steel,citecolor=steel,urlcolor=crimson]{hyperref}
+
+%------------------------- theorem environments -------------------------------
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{exercise}{Exercise}[section]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[section]
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+%------------------------- callout boxes --------------------------------------
+\newtcolorbox{intuition}{
+  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=crimson, coltitle=paperlt, fonttitle=\bfseries, title={Intuition}}
+
+\newtcolorbox{pitfall}{
+  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=amber, coltitle=paperlt, fonttitle=\bfseries, title={Pitfall}}
+
+\newtcolorbox{keyresult}{
+  enhanced, breakable, colback=steel!6, colframe=steel, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=steel, coltitle=paperlt, fonttitle=\bfseries, title={Takeaway}}
+
+\newtcolorbox{observed}{
+  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=teal, coltitle=paperlt, fonttitle=\bfseries, title={Measured}}
+
+%------------------------- math operators -------------------------------------
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Corr}{corr}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\std}{std}
+\DeclareMathOperator*{\avg}{\mathbb{E}}
+\newcommand{\T}{^{\!\top}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\half}{\tfrac12}
+\newcommand{\wvec}{\mathbf{w}}
+\newcommand{\Xmat}{\mathbf{X}}
+\newcommand{\Fmat}{\mathbf{F}}
+\newcommand{\Vmat}{\mathbf{V}}
+\newcommand{\Umat}{\mathbf{U}}
+\newcommand{\Rmat}{\mathbf{R}}
+\newcommand{\Lam}{\boldsymbol{\Lambda}}
+\newcommand{\Del}{\boldsymbol{\Delta}}
+\newcommand{\fvec}{\mathbf{f}}
+
+%------------------------- title ----------------------------------------------
+\title{\vspace{-2.2em}
+  {\color{steel}\rule{\textwidth}{1.3pt}}\\[0.7em]
+  \Huge\bfseries Specific Risk\\[0.35em]
+  \large\mdseries Forecasting the idiosyncratic variance diagonal --- the larger half of a stock's risk\\[0.4em]
+  {\color{steel}\rule{\textwidth}{0.7pt}}}
+\author{}
+\date{}
+
+%------------------------- watermark footer -----------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{black!45}MSCI Barra USE4 Imitation}
+\fancyfoot[R]{\footnotesize\color{black!45}\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+The factor covariance forecasts the risk a stock shares with the market; this stage forecasts the rest -- the \emph{specific}, idiosyncratic risk that is the stock's alone. It is the diagonal $\Del=\diag(\sigma_n^2)$, the second term of $\sigma_p^2 = \wvec\T\Xmat\Fmat\Xmat\T\wvec + \wvec\T\Del\wvec$, and despite its humble form it carries the larger share of a typical stock's variance: recall that the factor model explains only about a quarter of the cross-section, so roughly three-quarters of a single stock's return variance is specific. Forecasting it well is therefore not a footnote to the factor covariance; it is half the risk model. The difficulty is that each stock offers only its own one return series to learn from, and for the names that matter most to a risk model -- small, illiquid, short-history stocks -- that series is short, noisy, and contaminated by microstructure. USE4 meets this with a five-layer construction: a time-series estimate where history is rich, a structural model that predicts risk from a stock's exposures where history is poor, a coverage blend that trades smoothly between them, an empirical-Bayes shrinkage toward peer groups, and a volatility-regime multiplier. The payoff is concentrated exactly where a naive estimate fails: the small-cap names whose specific risk a time-series estimate badly under-forecasts.
+\end{abstract}
+
+\begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
+\textbf{How to read these notes.} This is a long set: specific risk is built in five layers (Sections~\ref{sec:ts}--\ref{sec:vra}), each addressing a different difficulty, and we explain the mathematics and the reason for each. Read Section~\ref{sec:ts} (the time series, including the bid--ask-bounce subtlety) and Section~\ref{sec:shrink} (shrinkage) slowly, and see Section~\ref{sec:valid} for why the structural and shrinkage layers earn their place. The numbers labelled as measured come from a single run of our personal build.
+
+\smallskip
+Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
+
+\smallskip
+\textbf{Reference material.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item External: Menchero, Orr \& Wang (2011), USE4 Methodology Notes (Sec. 3) and Empirical Notes (Sec. 5).
+\end{itemize}
+\end{tcolorbox}
+
+\tableofcontents
+\bigskip
+
+\section{What specific risk is, and why it is half the model}\label{sec:what}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State what $\Del$ is and where it enters portfolio risk.
+  \item Explain why specific risk is the larger share of a single stock's variance, and why it is hard to estimate.
+\end{itemize}
+
+A stock's return has two parts: the part the factors explain and the part they do not. The cross-sectional regression already split them -- the factor-explained piece $\Xmat_n\fvec$ and the residual, the \emph{specific return} $u_n$. Specific risk is the forecast variance of that residual, $\sigma_n^2$, collected for every stock into the diagonal matrix $\Del=\diag(\sigma_n^2)$. It is the second and final term of the portfolio-risk identity,
+\[
+\sigma_p^2 \;=\; \underbrace{\wvec\T\Xmat\Fmat\Xmat\T\wvec}_{\text{factor risk}} \;+\; \underbrace{\wvec\T\Del\wvec}_{\text{specific risk}} ,
+\]
+and with the factor covariance $\Fmat$ already built, $\Del$ completes the model. The diagonal form encodes the model's central assumption: once the common factors are removed, what remains is uncorrelated across stocks -- each stock's surprise is its own.
+
+It is tempting to treat $\Del$ as the small correction and $\Fmat$ as the main event, but the proportions run the other way for a single name. The factor model explains only about a quarter of the cross-section of returns -- the cross-sectional regression's fit runs near $25\%$ -- so for a typical stock roughly \emph{three-quarters} of its return variance is specific. In a broad, diversified portfolio those independent specific risks largely cancel, and factor risk dominates; but in a concentrated book of a few large positions there is little to diversify, and specific risk is most of the total. Either way, a risk model that forecasts $\Fmat$ beautifully and $\Del$ carelessly is wrong about most of the risk of most stocks.
+
+And $\Del$ is genuinely harder to estimate than $\Fmat$. The factor covariance pools thousands of stocks each day into sixty-eight well-observed series; specific risk must be estimated stock by stock, and each stock offers only its own single residual series. For a large, liquid name with years of history that is enough. For a recent listing, a thinly-traded micro-cap, or a stock outside the estimation universe (ESTU) entirely, the series is short, noisy, and distorted by trading frictions -- and those are exactly the names whose specific risk is largest and matters most. The five layers exist to forecast well across that whole range, not just for the easy names.
+
+\begin{intuition}
+Factor risk is the weather everyone shares; specific risk is each stock's private microclimate. For a big diversified garden the shared weather dominates and the microclimates average out. But if you own only three plants, their private quirks -- a draught here, a sunbeam there -- drive most of what happens to you. Specific risk is those quirks, and the hard part is that each plant has only its own short diary to learn from.
+\end{intuition}
+
+\begin{keyresult}
+$\Del=\diag(\sigma_n^2)$ is the specific-risk half of $\sigma_p^2$, and it is the \emph{larger} half of a single stock's variance (the factors explain only $\approx 25\%$). It is hard because each stock is estimated from its own one series, worst exactly for the small, short-history names. The five layers forecast it across that whole range.
+\end{keyresult}
+
+\section*{Notation}
+\addcontentsline{toc}{section}{Notation}
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$u_{n,s}$ & specific (idiosyncratic) return of stock $n$ on day $s$ (the CSR residual) \\
+$\Del$ & specific-risk diagonal $\diag(\sigma_n^2)$ over the coverage universe \\
+$\sigma^{\text{ts}}_n$ & Layer 1 time-series volatility forecast \\
+$\sigma^{\text{str}}_n$ & Layer 2 structural forecast (from exposures) \\
+$\gamma_n$ & coverage coefficient $\in[0,1]$ --- how much history to trust \\
+$\sigma^{\text{bl}}_n$ & Layer 3 blend $\gamma_n\sigma^{\text{ts}}_n+(1-\gamma_n)\sigma^{\text{str}}_n$ \\
+$\sigma^{\text{sh}}_n$ & Layer 4 shrunk forecast; $\bar\sigma_{S(n)}$ the mean of stock $n$'s size group \\
+$\sigma^{\text{spec}}_n$ & \textbf{the deliverable} --- Layer 5 regime-scaled monthly specific volatility \\
+$\lambda,\ B_t$ & volatility-regime multiplier; daily cross-sectional bias \\
+$b$ & bias statistic: realised $/$ predicted specific risk (target $\approx 1$) \\
+ESTU & estimation (regression) universe, an MSCI USA IMI proxy; vs the wider non-ESTU coverage \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Layer 1: the time-series estimate}\label{sec:ts}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Write the EWMA-plus-Newey--West specific variance and scale it to the horizon.
+  \item Explain why bid--ask bounce makes a naive serial-correlation correction dangerous, and how the bound fixes it.
+\end{itemize}
+
+Where a stock has a rich history, its own past specific returns are the best guide to its specific risk. The raw material is the stock's \emph{daily} specific returns -- the residuals of the cross-sectional regression run once per trading day, the same regression as the monthly one but estimated each day to give a long, high-resolution series. Layer 1 is the direct estimate from them: the exponentially-weighted variance of those daily specific returns, with the recent past weighted more, and -- because the specific return is a regression residual that is mean-zero by construction -- no mean to subtract,
+\[
+\big(\sigma^{\text{ts}}_n\big)^2 \;\propto\; \sum_{s\le t} w_s\,u_{n,s}^2 ,
+\qquad
+w_s \propto \exp\!\Big(-\ln 2\,\tfrac{t-s}{h}\Big),
+\]
+on a half-life $h$ of a few months. As with the factor covariance, this is a daily estimate corrected for serial correlation by a Bartlett-weighted Newey--West term over a few lags and then scaled to the monthly horizon ($\times\,21$ trading days). The reasoning is identical to the factor case: a month's specific variance is not just twenty-one daily variances when the daily residuals are autocorrelated.
+
+But specific returns have a twist the factor returns did not, and it points the autocorrelation the \emph{other} way. Trade prices bounce between the bid and the ask, so a print at the bid followed by one at the ask manufactures a small up-then-down that looks like a reversal -- a \emph{negative} first-order autocovariance -- in a single stock's returns. A Newey--West correction that naively added this negative autocovariance would push the long-run variance \emph{down}, occasionally collapsing a thin name's estimate toward zero and declaring a risky micro-cap riskless. The build guards against it by bounding the corrected long-run variance to a sensible band around the one-day variance, so bid--ask bounce can nudge the estimate but never collapse it, and by flooring the monthly volatility at a small positive level so that a freakishly quiet window is not mistaken for a riskless stock. In practice the floor almost never binds; it is a guardrail, not a feature.
+
+\begin{intuition}
+For factor returns, serial correlation is positive -- trends persist -- so the monthly variance is \emph{bigger} than the daily view suggests, and Newey--West adds risk. For a single stock's specific return, the bid--ask bounce adds a fake reversal, a \emph{negative} autocorrelation, that would have Newey--West \emph{subtract} risk. Same machinery, opposite sign, and the danger is opposite too: here the correction can understate risk, so it is bounded. The microstructure of how a single stock trades leaks into its measured volatility in a way the pooled factor returns never showed.
+\end{intuition}
+
+\begin{pitfall}
+Applying a scalar Newey--West correction to a single stock's returns without a bound is a real hazard. Bid--ask bounce gives a negative lag-one autocovariance; left unchecked it can drive the estimated long-run variance to a tiny number, so the model forecasts almost no specific risk for a name that is in fact volatile and illiquid -- the most dangerous possible error, since an optimiser will pour into an apparently-riskless stock. Bound the long-run variance; never let the microstructure term run free.
+\end{pitfall}
+
+\section{Layer 2: the structural model}\label{sec:struct}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Explain how a stock with little history can still be assigned a specific-risk forecast.
+  \item Describe the log-regression on exposures and the lognormal retransformation correction.
+\end{itemize}
+
+The time-series estimate fails for exactly the names that need it most: a recent listing has no long history, a thin micro-cap's residuals are too noisy, and a stock outside the estimation universe has no regression residual at all. For these, the model borrows strength from the cross-section. Stocks with similar \emph{characteristics} tend to have similar specific risk -- small, volatile, low-priced names are idiosyncratically riskier than large, stable ones -- so a stock's own exposures predict its specific volatility even when its history cannot.
+
+Layer 2 makes that precise. On each date, over the well-observed names, it regresses the (logarithm of the) time-series volatility on the style exposures, weighted by the square root of market cap, and keeps the fitted relationship:
+\[
+\log \sigma^{\text{ts}}_n \;=\; x_n\T b + \varepsilon_n
+\quad\Longrightarrow\quad
+\sigma^{\text{str}}_n \;=\; E_0\,\exp\!\big(x_n\T \hat b\big)\ \text{for every stock}.
+\]
+The regression is in \emph{logs} because volatility is positive and right-skewed, and a log makes the relationship roughly linear and the errors roughly symmetric. But that choice carries a subtlety: predicting $\exp(x_n\T\hat b)$ systematically \emph{under}-states the level, because the mean of a lognormal exceeds the exponential of the mean ($\avg[e^X] = e^{\,\avg X + \half\Var X} > e^{\,\avg X}$). The factor $E_0$ undoes this retransformation bias, rescaling the structural forecasts so their cap-weighted level matches the time-series level on the names that have both. The result is a specific-risk forecast available for \emph{every} coverage stock, fitted from the cross-sectional relationship between exposures and risk rather than from any one stock's history.
+
+\begin{intuition}
+If you had never watched a particular small biotech trade, you could still guess it is idiosyncratically volatile -- because small, clinical-stage biotechs are. The structural model formalises that guess: it learns, from the stocks it can see well, how exposures map to specific risk, and applies that map to the stocks it cannot. It is how the model says something sensible about a name with a one-month history.
+\end{intuition}
+
+\begin{pitfall}
+Fitting volatility in logs and then exponentiating the prediction without the retransformation correction quietly under-forecasts every structural estimate -- the gap between $\exp(\avg X)$ and $\avg[e^X]$ is not negligible for a right-skewed quantity. The $E_0$ rescaling is not a cosmetic normalisation; it is the difference between a structural model centred on the truth and one biased low across the board.
+\end{pitfall}
+
+\section{Layer 3: the coverage blend}\label{sec:blend}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State the blend and how the coverage coefficient is set.
+\end{itemize}
+
+With two forecasts in hand -- a history-based one and an exposure-based one -- the model needs a rule for trusting them. The rule is a smooth credibility weight $\gamma_n\in[0,1]$, and the blend is simply the convex combination
+\[
+\sigma^{\text{bl}}_n \;=\; \gamma_n\,\sigma^{\text{ts}}_n \;+\; (1-\gamma_n)\,\sigma^{\text{str}}_n .
+\]
+The coefficient $\gamma_n$ measures how much the time series deserves to be believed, and it combines two things: \emph{depth} -- how many daily observations the stock has, rising toward full trust once the history is long enough -- and \emph{recency} -- whether that history reaches up to the present or went stale weeks ago. A large, long-listed name has $\gamma_n\approx 1$ and rides its own time series; a fresh listing or a non-ESTU coverage stock has $\gamma_n\approx 0$ and falls back entirely on the structural forecast; the in-between cases blend the two in proportion to how much history there is to trust. The blend is the seam that lets one model span the liquid core and the long tail of the coverage universe without a hard cutoff.
+
+\begin{keyresult}
+The blend $\sigma^{\text{bl}}_n=\gamma_n\sigma^{\text{ts}}_n+(1-\gamma_n)\sigma^{\text{str}}_n$ trades smoothly between the history-based and exposure-based forecasts, with $\gamma_n$ set by how much usable history the stock has. Rich-history names lean on their own past; thin ones lean on their characteristics.
+\end{keyresult}
+
+\section{Layer 4: empirical-Bayes shrinkage}\label{sec:shrink}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Explain why even a good individual estimate should be pulled toward a group mean.
+  \item Write the shrinkage and describe what sets its intensity.
+\end{itemize}
+
+Even a stock with ample history yields a \emph{noisy} estimate of its own volatility -- a single series gives a single, error-prone number. Statistics has a classic answer: when you are estimating many similar quantities, each individual estimate is improved by pulling it partway toward the average of its group. The extreme individual estimates are extreme partly because of luck, and shrinking them toward the group mean removes some of that luck. This is the James--Stein / empirical-Bayes insight, and Layer 4 applies it.
+
+Each stock is shrunk toward the cap-weighted mean specific volatility of its \emph{size group} (stocks are bucketed into size deciles, since size is the strongest single correlate of specific risk):
+\[
+\sigma^{\text{sh}}_n \;=\; v_n\,\bar\sigma_{S(n)} \;+\; (1-v_n)\,\sigma^{\text{bl}}_n ,
+\]
+where $\bar\sigma_{S(n)}$ is the mean of stock $n$'s size group and $v_n\in[0,1]$ is the shrinkage intensity. The intensity is itself adaptive: it is larger when the stock's estimate sits far from its group mean \emph{relative to how spread out the group is} -- because a big deviation against a tight group looks like noise and should be pulled hard, while a deviation no larger than the group's natural spread is probably real and is left mostly alone. So confidently-measured, typical names barely move, and noisy outliers are reined in toward their peers. On the build run the average shrinkage intensity is about a third -- a meaningful but not overwhelming pull.
+
+\begin{intuition}
+Suppose one small stock's history says its volatility is far below every other small stock's. Two explanations: it really is unusually calm, or its short, quiet sample fooled you. Shrinkage bets on the second when the gap is large relative to the group's spread, nudging the estimate back toward what small stocks typically do. It is the model declining to believe an extreme number that rests on thin evidence -- borrowing the wisdom of the peer group to discipline the individual.
+\end{intuition}
+
+\section{Layer 5: the volatility-regime multiplier}\label{sec:vra}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State the specific-risk regime multiplier and what it tracks.
+\end{itemize}
+
+The final layer is the same idea the factor covariance used, now on the specific side: a fast, market-wide scalar that lifts or lowers the whole diagonal to match the current level of idiosyncratic turbulence. Each day the model forms a cross-sectional bias statistic -- the cap-weighted average of squared \emph{standardised} specific returns,
+\[
+B_t \;=\; \sum_n w_n\Big(\frac{u_{n,t}}{\sigma^{\text{sh}}_n/\sqrt{21}}\Big)^{2}
+\quad(\text{winsorised}),
+\qquad
+\lambda \;=\; \sqrt{\operatorname{EWMA}(B_t)},
+\qquad
+\sigma^{\text{spec}}_n \;=\; \lambda\,\sigma^{\text{sh}}_n .
+\]
+If specific returns are, on average, the size the forecast predicted, each standardised residual is about one and $B_t\approx 1$; when idiosyncratic moves run hot across the market -- earnings-season clusters, a deleveraging scramble -- $B_t>1$ and the multiplier lifts the whole diagonal. The squared standardised returns are winsorised before averaging so that a single catastrophic move (a fraud, a halt-and-collapse) cannot, on its own, swing a market-wide multiplier. As on the factor side, the multiplier averages near one but can more than double the forecast in a crash, and because it is a single scalar it changes the level without disturbing the per-stock structure the first four layers built.
+
+\section{Does it work? the small-cap bias}\label{sec:valid}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Define the specific-risk bias statistic and read the by-size-decile profile.
+  \item Identify which layers earn their place, and where.
+\end{itemize}
+
+The forecast is validated the same way the factor covariance was: with bias statistics on a strictly out-of-sample backtest. Every month-end forecast is point-in-time -- it uses only data dated up to that month-end (the daily residuals through $t$, the structural fit and shrinkage groups formed at $t$, the regime multiplier accumulated causally) -- so the backtest is genuinely out-of-sample. For each stock-month the realised specific return is standardised by the forecast specific volatility; a calibrated forecast gives a cap-weighted bias near one, above one if it under-forecasts. The single most revealing cut is bias \emph{by size}, because size is where the time-series estimate struggles -- and it is here that the structural and shrinkage layers prove their worth (Figure~\ref{fig:specrisk_bias}).
+
+A time-series-only forecast badly under-predicts the small-cap names: in the smallest deciles its bias runs near $1.6$, meaning those stocks realise some sixty percent more specific risk than the bare time series forecast. The reasons are exactly the ones the earlier layers were built for -- short, noisy histories and bid--ask bounce, which understate true idiosyncratic risk precisely where the names are smallest and least liquid. Layering the structural model, the coverage blend, and the shrinkage on top flattens that slope onto one: the full-stack bias runs roughly $1.0$ to $1.1$ across every size decile, a spread of about $0.1$ where the time-series-only spread was over half. This is the specific-risk counterpart of the factor model's eigenfactor smile -- a structured, size-linked bias that the dedicated layers remove -- and it is the load-bearing result of the stage: the layers earn their place precisely where the naive estimate fails.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/specific_risk_bias.png}
+\caption{Specific-risk bias (realised $/$ predicted) by size decile, smallest to largest, over the out-of-sample backtest. A time-series-only forecast (the steeply-sloped curve) under-predicts small-cap specific risk badly -- bias $\approx 1.6$ in the smallest decile, falling toward one for large caps -- because short, noisy histories and bid--ask bounce understate idiosyncratic risk for small names. The full five-layer stack (the flat curve) holds the profile to $\approx 1.0$--$1.1$ across all deciles (spread $\approx 0.1$, down from $>0.5$; the two cross only at the very largest decile). The structural and shrinkage layers earn their place exactly where the time series fails.}
+\label{fig:specrisk_bias}
+\end{figure}
+
+\begin{observed}
+On the build run the deliverable covers $\approx 1.10$M stock-dates ($\approx 10{,}700$ tickers, $303$ month-ends), ESTU and non-ESTU together. The median specific volatility is $\approx 0.10$ per month over the whole coverage universe and $\approx 0.078$ per month ($\approx 27\%$ per year) over the ESTU -- the coverage median is higher because the small non-ESTU names carry the most idiosyncratic risk. The successive layer medians climb sensibly as each correction adds risk back ($\sigma^{\text{ts}}\approx 0.070$, $\sigma^{\text{str}}\approx 0.086$, $\sigma^{\text{bl}}\approx 0.088$, $\sigma^{\text{sh}}\approx 0.095$). The overall cap-weighted bias statistic is $\approx 1.07$ -- inside the $[0.85,1.15]$ band, a slight, deliberate-to-tolerate under-forecast -- and the by-decile profile is flat (spread $\approx 0.09$), versus a time-series-only spread of $\approx 0.55$. The shrinkage pulls with an average intensity of $\approx 0.35$, and the regime multiplier averages $\approx 1.05$, ranging from $\approx 0.75$ in calm to $\approx 1.9$ in a crash.
+\end{observed}
+
+\begin{exercise}
+The factor model explains about $25\%$ of a stock's return variance. If a stock's total monthly volatility is $10\%$, roughly what is its specific (idiosyncratic) volatility, and what fraction of its \emph{variance} is specific? (Hint: variance, not volatility, splits additively.)
+\end{exercise}
+
+\begin{exercise}
+Bid--ask bounce induces a negative lag-one autocovariance in a single stock's returns. Explain why an unbounded Newey--West correction would then \emph{lower} the estimated specific variance, and why that is a more dangerous error than over-stating it.
+\end{exercise}
+
+\begin{exercise}
+A small stock's blended specific-vol estimate is far below its size decile's mean, and the decile's spread is tight. Will the shrinkage intensity $v_n$ be large or small, and which way will the shrunk estimate move? Explain in terms of ``is this deviation signal or noise?''
+\end{exercise}
+
+\section{Summary, and one caveat}\label{sec:summary}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Recite the five layers and what each fixes.
+  \item State the central limitation.
+\end{itemize}
+
+The build, end to end: estimate each stock's specific volatility from the exponentially-weighted variance of its daily specific returns, Newey--West-corrected (with the long-run variance bounded against bid--ask bounce) and scaled to the month; predict a structural volatility for every stock from its exposures, fitted in logs with a retransformation correction; blend the two by a coverage coefficient that trusts history where there is history and characteristics where there is not; shrink each estimate toward its size group with an intensity that grows when the deviation looks like noise; and scale the whole diagonal by a daily volatility-regime multiplier. The output is $\Del=\diag(\sigma^{\text{spec},2}_n)$ -- a specific-risk forecast that is well-calibrated across the size spectrum, not just for the easy large names.
+
+\begin{keyresult}
+Specific risk is forecast in five layers -- time series, structural, blend, shrinkage, regime -- and the structural and shrinkage layers are what make it work, flattening the small-cap bias a time-series estimate cannot. With $\Del$ in hand alongside $\Fmat$, the risk model is complete.
+\end{keyresult}
+
+\begin{pitfall}
+One honest limitation: the forecast is calibrated on average and runs a touch conservative -- the overall bias sits near $1.07$, a slight under-forecast that a small global calibration could centre but that is left as a mild, safe lean. More fundamentally, the diagonal form of $\Del$ assumes specific returns are \emph{uncorrelated} across stocks once the factors are removed. That is the model's defining simplification, and it is not perfectly true: genuine specific linkages survive -- two firms with a supplier relationship, a parent and its partial spin-off, names caught in the same crowded trade -- and a diagonal $\Del$ cannot see them, so it under-states the risk of a portfolio concentrated in such linked pairs. Capturing residual specific correlations is the natural next refinement; the diagonal is the standard, tractable first order, and it is what the portfolio-risk identity assumes.
+\end{pitfall}
+
+\begin{remark}
+None of this changes the stage's place in the model: specific risk is the diagonal $\Del$ that completes $\sigma_p^2=\wvec\T\Xmat\Fmat\Xmat\T\wvec+\wvec\T\Del\wvec$, and it is -- for most single stocks -- the larger of the two terms. With the factor covariance and the specific-risk diagonal both built, every input to a portfolio risk forecast is in hand; what remains is to put them together and read the answer.
+\end{remark}
+
+\begin{center}\small\itshape
+References: Menchero, Orr \& Wang (2011), \textit{The Barra US Equity Model (USE4)} --- Methodology Notes (Sec. 3) and Empirical Notes (Sec. 5). ESTU treated as an MSCI USA IMI proxy; measured quantities are from a personal build run.
+\end{center}
+
+\end{document}

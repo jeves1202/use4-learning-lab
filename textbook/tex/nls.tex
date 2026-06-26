@@ -1,0 +1,285 @@
+\documentclass[11pt]{article}
+
+%------------------------- fonts & encoding -----------------------------------
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage[sc]{mathpazo}
+\linespread{1.06}
+\usepackage{microtype}
+
+%------------------------- layout ---------------------------------------------
+\usepackage[a4paper,margin=1.05in,marginparwidth=1.0in]{geometry}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\setlist{itemsep=2pt,topsep=3pt}
+\usepackage{xcolor}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepackage[most,breakable]{tcolorbox}
+
+%------------------------- palette --------------------------------------------
+\definecolor{crimson}{HTML}{A51C30}
+\definecolor{ink}{HTML}{1A1A1A}
+\definecolor{steel}{HTML}{2C5F8A}
+\definecolor{amber}{HTML}{9A6A00}
+\definecolor{teal}{HTML}{1F6F6B}
+\definecolor{paperlt}{HTML}{F7F4EF}
+
+%------------------------- section styling ------------------------------------
+\usepackage{titlesec}
+\titleformat{\section}{\Large\bfseries\color{steel}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{ink}}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6em}{0.6em}
+
+%------------------------- hyperref -------------------------------------------
+\usepackage[colorlinks=true,linkcolor=steel,citecolor=steel,urlcolor=crimson]{hyperref}
+
+%------------------------- theorem environments -------------------------------
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{example}{Example}[section]
+\newtheorem{exercise}{Exercise}[section]
+\theoremstyle{plain}
+\newtheorem{proposition}{Proposition}[section]
+\theoremstyle{remark}
+\newtheorem*{remark}{Remark}
+
+%------------------------- callout boxes --------------------------------------
+\newtcolorbox{intuition}{
+  enhanced, breakable, colback=crimson!5, colframe=crimson, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=crimson, coltitle=paperlt, fonttitle=\bfseries, title={Intuition}}
+
+\newtcolorbox{pitfall}{
+  enhanced, breakable, colback=amber!7, colframe=amber, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=amber, coltitle=paperlt, fonttitle=\bfseries, title={Pitfall}}
+
+\newtcolorbox{keyresult}{
+  enhanced, breakable, colback=steel!6, colframe=steel, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=steel, coltitle=paperlt, fonttitle=\bfseries, title={Takeaway}}
+
+\newtcolorbox{observed}{
+  enhanced, breakable, colback=teal!6, colframe=teal, boxrule=0.5pt,
+  left=8pt,right=8pt,top=6pt,bottom=6pt, arc=2pt,
+  colbacktitle=teal, coltitle=paperlt, fonttitle=\bfseries, title={Measured}}
+
+%------------------------- math operators -------------------------------------
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Cov}{Cov}
+\DeclareMathOperator{\Corr}{corr}
+\DeclareMathOperator{\diag}{diag}
+\DeclareMathOperator{\std}{std}
+\DeclareMathOperator*{\avg}{\mathbb{E}}
+\newcommand{\T}{^{\!\top}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\half}{\tfrac12}
+\newcommand{\wvec}{\mathbf{w}}
+\newcommand{\Xmat}{\mathbf{X}}
+\newcommand{\Fmat}{\mathbf{F}}
+\newcommand{\Vmat}{\mathbf{V}}
+\newcommand{\Umat}{\mathbf{U}}
+\newcommand{\Rmat}{\mathbf{R}}
+\newcommand{\Lam}{\boldsymbol{\Lambda}}
+\newcommand{\Del}{\boldsymbol{\Delta}}
+\newcommand{\fvec}{\mathbf{f}}
+
+%------------------------- title ----------------------------------------------
+\title{\vspace{-2.2em}
+  {\color{steel}\rule{\textwidth}{1.3pt}}\\[0.7em]
+  \Huge\bfseries Non-Linear Size\\[0.35em]
+  \large\mdseries The mid-cap factor --- the cube of the size exposure, capturing the curve in the size effect\\[0.4em]
+  {\color{steel}\rule{\textwidth}{0.7pt}}}
+\author{}
+\date{}
+
+%------------------------- watermark footer -----------------------------------
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+\fancyfoot[L]{\footnotesize\color{black!45}MSCI Barra USE4 Imitation}
+\fancyfoot[R]{\footnotesize\color{black!45}\thepage}
+
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+
+\begin{abstract}
+Non-Linear Size is the curvature factor for size -- the term often called the ``mid-cap'' factor. The linear Size factor enters the model as a straight line in log market cap, but the way size maps to risk and return is not straight: mid-capitalisation stocks tend to behave differently from both the giant mega-caps and the tiny micro-caps, and a single linear factor cannot bend to fit that. Non-Linear Size supplies the bend. It is built as the \emph{cube} of the standardised Size exposure, orthogonalised back to Size so the straight-line part is removed, then winsorised and standardised. The result is a humped exposure that peaks for mid-caps and falls away toward both extremes of the size range -- exactly the non-monotonic pattern a linear factor misses. Like its companion on the beta dimension, it carries no new data, only a re-expression of the Size exposure the model already has. One wrinkle distinguishes it: because the Size exposure is strongly left-skewed and the orthogonalisation is weighted toward large caps (by the square root of market cap), the delivered factor still leans noticeably with size rather than coming out cleanly size-neutral.
+\end{abstract}
+
+\begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
+\textbf{How to read these notes.} We move from \emph{why} a curvature term is needed to \emph{how} USE4 specifies it, then to the cube-orthogonalise-winsorise construction (Section~\ref{sec:compute}) and to the mid-cap hump it produces (Section~\ref{sec:curve}). Read Section~\ref{sec:curve} slowly; it carries the weight of the set. The numbers labelled as measured come from a single run of our personal build.
+
+\smallskip
+Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
+
+\smallskip
+\textbf{Reference material.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item External: Menchero, Orr \& Wang (2011), USE4 Empirical Notes (Appendix A) and Methodology Notes (Sec. 2.2--2.3).
+\end{itemize}
+\end{tcolorbox}
+
+\tableofcontents
+\bigskip
+
+\section{What Non-Linear Size is, and why it is a factor}\label{sec:what}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Explain why the size effect is non-monotonic and a linear Size factor cannot capture it.
+  \item State what Non-Linear Size adds, and that it carries no new data.
+\end{itemize}
+
+The Size factor ranks stocks along one straight line: log market capitalisation, standardised. That captures the broad large-versus-small tilt, but the empirical relationship between size and behaviour is not a straight line. Mid-cap stocks -- large enough to be liquid and followed, small enough to still grow and surprise -- have long been observed to behave as their own group, distinct from the mega-caps that dominate the index and the micro-caps that crowd its bottom. A purely linear Size factor cannot express ``the middle is different from both ends''; it can only say bigger or smaller.
+
+Non-Linear Size is the term that lets the middle be different. It is constructed from the \emph{cube} of the Size exposure, which bends, with the straight-line part removed, so what remains is the curvature in the size dimension -- the part of the size--behaviour relationship that bows rather than slopes. It introduces no new measurement: it is a deterministic function of the Size exposure the model already carries. Its whole purpose is to give the model a second handle on size -- not just where a stock sits on the large-to-small line, but whether sitting in the \emph{middle} of that line matters in its own right.
+
+\begin{intuition}
+Picture the size--return relationship as a curve. The Size factor gives you its overall slope -- large versus small. Non-Linear Size gives you a hump: it lets the mid-caps rise above (or fall below) the straight line connecting the extremes. With both, the model fits a bowed curve instead of a ruler. Hold that picture -- a mid-cap bump, not a new measurement -- and the cube below is simply the simplest shape that can bend that way.
+\end{intuition}
+
+\begin{keyresult}
+The Non-Linear Size exposure is the cube of the standardised Size exposure, orthogonalised to Size so that only the curvature -- the mid-cap hump -- remains. Everything that follows is about that cube, that orthogonalisation, and a caveat about how cleanly the two separate.
+\end{keyresult}
+
+\section*{Notation}
+\addcontentsline{toc}{section}{Notation}
+
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+Symbol & Meaning \\
+\midrule
+$s^{z}_i$ & the standardised Size exposure of stock $i$ (the Size factor's deliverable) \\
+$(s^{z}_i)^{3}$ & its cube \\
+$\gamma_t$ & per-date slope of the cube regressed on $s^{z}$ (the linear part removed) \\
+$n_i$ & raw NLS: the orthogonalisation residual $(s^{z}_i)^{3} - \gamma_t\,s^{z}_i$ \\
+$x_i$ & standardised NLS exposure for stock $i$ \\
+$w_i$ & cap weight of stock $i$ in the ESTU \\
+$\avg_{\text{cw}}, \std_{\text{ew}}$ & cap-weighted mean, equal-weighted standard deviation over the ESTU \\
+ESTU & estimation universe (MSCI USA IMI proxy) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{How USE4 defines it}\label{sec:def}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State the cube-orthogonalise-winsorise-standardise definition.
+  \item Note that NLS is a transform of the Size exposure and inherits its coverage.
+\end{itemize}
+
+USE4 defines Non-Linear Size as the cube of the standardised Size exposure, orthogonalised to the Size factor, then winsorised and standardised (Menchero, Orr \& Wang 2011, Empirical Notes, App. A). Concretely: take the Size deliverable's standardised exposure, cube it, regress the cube on the Size exposure and keep the residual, winsorise that residual at its outer percentiles, and standardise over the estimation universe to cap-weighted mean $0$ and equal-weighted standard deviation $1$ (Methodology Notes, Sec. 2.2--2.3).
+
+Because the only input is the Size exposure, Non-Linear Size is a pure transform: it reads no returns or fundamentals of its own, and its coverage is exactly Size's -- which, since size needs only a market cap, spans the whole calendar with essentially no gaps. Reading the Size exposure directly also means NLS is orthogonalised to the \emph{same} Size factor that enters the model.
+
+\section{How we compute it: cube, orthogonalise, winsorise}\label{sec:compute}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Explain why the cube is orthogonalised to Size.
+  \item Explain why the factor is \emph{winsorised} rather than trimmed at three standard deviations.
+\end{itemize}
+
+The construction has three steps. First, cube the standardised Size exposure. Cubing barely moves the moderate middle and explodes at the extremes, and because the Size exposure is strongly left-skewed -- a long tail of small stocks below the cap-weighted mean -- the cube is dominated by that small-cap tail, diving steeply negative for the tiniest names (Figure~\ref{fig:nls_dist}, left). On its own the cube tracks Size at a correlation of about $0.9$, so it is far from a clean curvature term.
+
+Second, orthogonalise. At each date the cube is regressed on the Size exposure -- a no-intercept regression weighted by the square root of market cap, fit over the estimation universe -- and the residual $n_i = (s^{z}_i)^{3} - \gamma_t\,s^{z}_i$ is kept. Subtracting $\gamma_t\,s^{z}_i$ removes the straight-line part, leaving the bend.
+
+Third, \emph{winsorise} -- and this is where NLS departs from its beta-dimension twin. The cubic residual is so violently skewed that a three-standard-deviation trim barely clips anything: nearly all the mass sits well inside three sigma while a few small-cap cubes sit absurdly far out, and a sigma-based rule keyed to that inflated spread lets them through. So instead the residual is winsorised -- clipped at fixed outer percentiles, roughly the top and bottom one percent -- which reliably pulls both tails in regardless of how fat they are. Winsorising \emph{pulls} the extremes to the boundary rather than dropping them, and applying it before the final standardisation is what gives the factor its tidy, bounded shape.
+
+\begin{pitfall}
+Match the taming method to the distribution. A three-standard-deviation trim is the right tool for a roughly bell-shaped descriptor, but on a cube -- where the spread is set by a handful of enormous outliers -- it is nearly inert, clipping almost nothing and leaving the standardisation hostage to the extremes. Percentile winsorisation sidesteps that by clipping a fixed fraction of each tail no matter how heavy. Reach for winsorisation, not a sigma trim, whenever a few extreme values would otherwise define the scale.
+\end{pitfall}
+
+\section{Reading the curvature: a mid-cap hump that still leans with size}\label{sec:curve}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Read the humped shape and say which stocks load high.
+  \item Explain why the delivered factor still correlates with Size, despite the orthogonalisation.
+\end{itemize}
+
+The finished factor, as a function of size, is the hump in Figure~\ref{fig:nls_dist} (right). It rises from low values at the very smallest caps, peaks for mid-cap names, and falls away again toward the largest -- so mid-caps load \emph{high} on Non-Linear Size while both the micro-cap and the mega-cap extremes load low. That hump is precisely the non-monotonic ``mid-cap effect'': the size dimension bows in the middle, and this factor is the model's only way to see it. A stock's Non-Linear Size exposure says not how big it is, but how close it is to the middle of the size range.
+
+Now the wrinkle, and it is a real one. The orthogonalisation is weighted by the square root of market cap, which leans toward the larger names, so it removes the \emph{$\sqrt{\text{mcap}}$-weighted} relationship to Size -- the version the big stocks dominate -- essentially exactly. But the plain equal-weighted relationship is a different quantity, and it does \emph{not} vanish: because the Size exposure is strongly left-skewed and most stocks sit on the rising, small-to-mid flank of the hump, the delivered factor retains a substantial ordinary correlation with Size -- about $0.6$ pooled, and $\approx 0.7$ in the single cross-section of Figure~\ref{fig:nls_dist} (right). This is unlike the beta-dimension curvature factor, where a roughly symmetric input leaves almost no residual correlation. Non-Linear Size is therefore best understood as a curvature term that \emph{still leans with size} -- it captures the mid-cap hump, but it is not a clean, size-neutral axis.
+
+\begin{intuition}
+Why does a large-cap-leaning orthogonality not deliver equal-weighted independence? The $\sqrt{\text{mcap}}$-weighted regression leans toward the biggest stocks, so it zeroes the relationship \emph{as the large caps see it}. But there are thousands of small stocks each carrying little weight, and among them the hump's rising flank still ties the factor to size. Remove the relationship the giants care about, and the one the crowd of small names embodies survives. With a symmetric input the two notions nearly coincide; with a skewed one like size, they part ways.
+\end{intuition}
+
+\begin{observed}
+On the build run the finished Non-Linear Size exposure is a humped function of size, peaking for mid-caps and declining toward both the smallest and largest names. It is left-skewed (skew $\approx -1$), inheriting the skew of the Size exposure, and it retains a sizeable ordinary correlation with Size itself ($\approx 0.6$ pooled, $\approx 0.7$ in a representative cross-section) despite the $\sqrt{\text{mcap}}$-weighted orthogonalisation, which removes only the large-cap-weighted version of that relationship. Despite that size lean it comes out close to market-neutral, a top-versus-bottom NLS spread correlating only weakly with the market. Because the factor is \emph{winsorised} then standardised, it is tightly bounded: essentially $100\%$ of all stocks -- in and out of the estimation universe alike -- fall within $[\pm 3]$, a signature no trimmed factor shows. Month-over-month rank stability is the highest of the style factors, Spearman $\rho \approx 0.99$: it is a transform of Size, and a stock's market-cap rank barely moves from month to month. The deliverable is $\approx 1.73$M scored rows over $330$ dates and $\approx 16{,}480$ tickers -- exactly Size's coverage, as a transform must inherit.
+\end{observed}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\linewidth]{figures/nls_dist.png}
+\caption{Building Non-Linear Size, on one in-ESTU cross-section. \emph{Left:} the cube of the Size exposure is dominated by the small-cap tail and tracks Size at correlation $\approx 0.9$. \emph{Right:} after orthogonalising the cube to Size and winsorising, the exposure is a hump -- peaking for mid-caps, falling toward both the smallest and largest -- the non-monotonic mid-cap effect. Note the hump still slopes upward overall (correlation with Size $\approx 0.7$ in this cross-section): the $\sqrt{\text{mcap}}$-weighted orthogonalisation removes the large-cap-weighted size relationship but, with a left-skewed input, leaves the equal-weighted one largely intact.}
+\label{fig:nls_dist}
+\end{figure}
+
+\section{Winsorisation and standardisation}\label{sec:std}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item State the order of operations and the standardisation target.
+  \item Explain the bounded-exposure signature.
+\end{itemize}
+
+The pipeline from the Size exposure to the deliverable is: cube, orthogonalise, winsorise, standardise. The winsorised residual is standardised over the ESTU to cap-weighted mean $0$ and equal-weighted standard deviation $1$:
+\[
+x_i \;=\; \frac{\tilde n_i - \avg_{\text{cw}}(\tilde n)}{\std_{\text{ew}}(\tilde n)},
+\qquad
+\avg_{\text{cw}}(\tilde n) = \frac{\sum_i w_i\,\tilde n_i}{\sum_i w_i},
+\]
+with $\tilde n$ the winsorised residual and $w_i$ the cap weights. Because winsorisation has already pulled every value to within fixed percentile bounds before the scaling, the standardised exposure inherits hard limits: nearly every stock lands inside $[\pm 3]$, with none of the long tails that a three-standard-deviation \emph{trim} leaves behind (a trim removes the worst offenders but does not bound what remains). This tidy, bounded distribution is the visible fingerprint of winsorise-then-standardise.
+
+\begin{exercise}
+Using Figure~\ref{fig:nls_dist} (right), say which of these three stocks loads highest on Non-Linear Size: a giant mega-cap, a mid-cap, or a tiny micro-cap. Explain in one sentence how this differs from what the linear Size factor would say about the same three.
+\end{exercise}
+
+\begin{exercise}
+The cube of the Size exposure is winsorised rather than trimmed at three standard deviations. Explain why a sigma-based trim clips almost nothing on this distribution, and what the percentile winsorisation does instead.
+\end{exercise}
+
+\begin{exercise}
+Non-Linear Size is orthogonalised to Size on a $\sqrt{\text{mcap}}$-weighted (large-cap-leaning) basis, yet its ordinary (equal-weighted) correlation with Size is still about $0.6$--$0.7$. Explain why removing the large-cap-weighted relationship does not remove the equal-weighted one, referring to the skew of the Size exposure.
+\end{exercise}
+
+\section{Summary, and one caveat}\label{sec:summary}
+
+\paragraph{Learning objectives.}
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item Recite the Non-Linear Size build from the Size exposure to the standardised factor.
+  \item State the central limitation.
+\end{itemize}
+
+The build, end to end: take the standardised Size exposure; cube it, which bends sharply and -- because size is left-skewed -- dives at the small-cap end; orthogonalise the cube to Size, a $\sqrt{\text{mcap}}$-weighted no-intercept regression whose residual strips out the straight-line part; winsorise that residual at its outer percentiles, the right tool for a cube's heavy tails where a sigma trim would do nothing; and standardise to cap-weighted mean $0$, equal-weighted standard deviation $1$. The output is the mid-cap factor: a humped, bounded, exceptionally stable exposure that peaks in the middle of the size range.
+
+\begin{keyresult}
+Non-Linear Size is the cubic curvature of the size dimension -- the mid-cap hump -- with the linear part removed. The computations that matter are the orthogonalisation (which isolates the curvature) and the winsorisation (the right way to tame a cube), with the standing caveat that the curvature still leans with size.
+\end{keyresult}
+
+\begin{pitfall}
+One honest limitation defines this factor. It is not cleanly independent of Size: the $\sqrt{\text{mcap}}$-weighted orthogonalisation removes only the large-cap-weighted size relationship, and because the Size exposure is skewed the delivered factor keeps an ordinary correlation with Size of around $0.6$--$0.7$. So in the model Non-Linear Size and Size overlap more than their names suggest, and it is the joint cross-sectional estimation -- where all factors are fit together -- that ultimately sorts out the shared variation; the pairwise orthogonalisation used here is only a first pass. A second, structural point, shared with the beta-dimension curvature factor: Non-Linear Size adds no new data, so it earns its place only insofar as the size relationship genuinely bends -- which, as the mid-cap hump shows, it does. The clear levers are to orthogonalise jointly in the full cross-sectional regression rather than pairwise, and to treat the residual size correlation explicitly when attributing risk.
+\end{pitfall}
+
+\begin{remark}
+None of this changes the factor's place in the model: Non-Linear Size is the curvature companion to Size, present so the model can fit a bowed size--return relationship -- the mid-cap effect -- rather than a straight one. The caveat is about \emph{how cleanly} it separates from Size, not about whether the mid-cap curvature is real.
+\end{remark}
+
+\begin{center}\small\itshape
+References: Menchero, Orr \& Wang (2011), \textit{The Barra US Equity Model (USE4)} --- Empirical Notes (Appendix A) and Methodology Notes (Sec. 2.2--2.3). ESTU treated as an MSCI USA IMI proxy; measured quantities are from a personal build run.
+\end{center}
+
+\end{document}

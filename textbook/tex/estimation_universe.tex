@@ -116,13 +116,13 @@ The \emph{estimation universe} (ESTU) is the set of stocks on which the USE4 mod
 \end{abstract}
 
 \begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
-\textbf{How to read these notes.} Read it top to bottom once. The spine is simple: Section~\ref{sec:why} argues why the ESTU matters; Sections~\ref{sec:spec}--\ref{sec:gap} set up what USE4 specifies and the data gap; Sections~\ref{sec:rep}--\ref{sec:stab} build the three screens (representation, liquidity, stability), one concept per section, each independently readable; Sections~\ref{sec:run}--\ref{sec:summary} report the build and close with one caveat.
+\textbf{How to read these notes.} Read it top to bottom once. The spine is simple: Section~\ref{sec:why} argues why the ESTU matters; Sections~\ref{sec:spec}--\ref{sec:gap} set up what USE4 specifies and the data gap; Sections~\ref{sec:rep}--\ref{sec:stab} build the three screens (representation, liquidity, stability), one concept per section, each independently readable; Sections~\ref{sec:run}--\ref{sec:summary} report the build and close with one caveat. The numbers labelled as measured come from a single run of our personal build.
 
 Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
 
 \textbf{Reference material.}
-\begin{itemize}[nosep,leftmargin=1.4em]
-  \item \textbf{External:} Menchero, Orr \& Wang (2011), \emph{USE4 Methodology Notes} and \emph{Empirical Notes}, Sec.\ 3.1 and 2.3; the MSCI Global Investable Market Indexes (GIMI) Methodology.
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
+  \item External: Menchero, Orr \& Wang (2011), \emph{USE4 Methodology Notes} and \emph{Empirical Notes}, Sec.\ 3.1 and 2.3; the MSCI Global Investable Market Indexes (GIMI) Methodology.
 \end{itemize}
 \end{tcolorbox}
 
@@ -419,7 +419,7 @@ The build ships with an eight-check validation battery, all green on the 2026-06
 Schema and disk read-back checks pass alongside these.
 
 \begin{observed}
-Validation: $8/8$ checks PASS; $0$ PIT leaks; schema and read-back PASS (personal build, 2026-06-23). Mega-caps appear in every eligible month (e.g.\ MSFT and JPM each $\approx 331$ months). Mcap coverage averages $99.3\%$ of the retain-eligible universe (post-2005 minimum $\approx 95.8\%$). Deliverable scale: $\approx 1.86$M panel rows, $\approx 825$k in-ESTU rows, $342$ monthly signal dates ($1998$-$01$-$30$ to $2026$-$06$-$23$), $\approx 17.4$k tickers.
+Validation: $8/8$ checks PASS; $0$ PIT leaks; schema and read-back PASS (personal build, 2026-06-23). Mega-caps appear in every eligible month (e.g.\ MSFT and JPM each $\approx 331$ months). Mcap coverage averages $99.3\%$ of the retain-eligible universe (post-2005 minimum $\approx 95.8\%$). Deliverable scale: $\approx 1.86$M panel rows, $\approx 825$k in-ESTU rows, $\approx 17.4$k tickers, and $342$ monthly universe-construction dates ($1998$-$01$-$30$ to $2026$-$06$-$23$). The factor models run on a shorter span at both ends: exposures begin in $1999$, once the trailing-window warm-up clears, and any factor built from excess returns ends at $2026$-$04$-$30$---the last date covered by the Ken French risk-free series used to turn raw returns into excess---so the factor-return panel and the risk forecasts close in spring $2026$ even though the universe itself extends into June.
 \end{observed}
 
 \begin{figure}[htbp]
@@ -554,7 +554,7 @@ Calendar start & 1998 & data-driven history start \\
 \end{center}
 
 \begin{center}\small\itshape
-References: Menchero, J., Orr, D.J., \& Wang, J. (2011), \emph{The Barra US Equity Model (USE4)} --- Methodology Notes (Sec.\ 3.1, 2.3) and Empirical Notes (Sec.\ 3.1). MSCI Global Investable Market Indexes (GIMI) Methodology (public principles: representation, liquidity, stability). Build figures from personal build run dated 2026-06-23.
+References: Menchero, J., Orr, D.J., \& Wang, J. (2011), \emph{The Barra US Equity Model (USE4)} --- Methodology Notes (Sec.\ 3.1, 2.3) and Empirical Notes (Sec.\ 3.1). MSCI Global Investable Market Indexes (GIMI) Methodology (public principles: representation, liquidity, stability). ESTU treated as an MSCI USA IMI proxy; measured quantities are from a personal build run.
 \end{center}
 
 \end{document}

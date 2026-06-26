@@ -16,3 +16,10 @@ This file maintains the cross-reference graph for the USE4 lecture-note library:
 | Beta                            | tex/beta.tex                | drafted | (none)                             |
 | Momentum                        | tex/mom.tex                 | drafted | (none)                             |
 | Residual Volatility             | tex/resvol.tex              | drafted | (Beta --- orthogonalised against)  |
+| Non-Linear Beta                 | tex/nlb.tex                 | drafted | (Beta --- cube, orthogonalised)    |
+| Non-Linear Size                 | tex/nls.tex                 | drafted | (Size --- cube, orthogonalised)    |
+| Industry Factors                | tex/industries.tex          | drafted | (none)                             |
+| The Cross-Sectional Regression  | tex/csr.tex                 | drafted | (styles, industries, country)      |
+| The Factor Covariance Forecast  | tex/fcov.tex                | drafted | (CSR factor returns)               |
+| Specific Risk                   | tex/specific_risk.tex       | drafted | (CSR specific returns)             |
+| Portfolio Risk Decomposition    | tex/risk_decomp.tex         | drafted | (factor cov + specific risk)       |

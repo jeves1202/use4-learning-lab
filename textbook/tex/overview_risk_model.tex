@@ -116,11 +116,11 @@ A risk model answers one practical question: how much will this portfolio's valu
 \end{abstract}
 
 \begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
-\textbf{How to read these notes.} Read this document top to bottom as a tour of one pipeline. Section~\ref{sec:goal} states the single identity that the whole model serves; Sections~\ref{sec:data}--\ref{sec:specific} walk the assembly line left to right (data, exposures $\Xmat$, the regression that yields factor returns $\fvec$ and specific returns $u$, the factor covariance $\Fmat$, and the specific diagonal $\Del$); Section~\ref{sec:decomp} composes them back into portfolio risk and attribution; Section~\ref{sec:caveat} recaps the line and gives a caveat. Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
+\textbf{How to read these notes.} Read this document top to bottom as a tour of one pipeline. Section~\ref{sec:goal} states the single identity that the whole model serves; Sections~\ref{sec:data}--\ref{sec:specific} walk the assembly line left to right (data, exposures $\Xmat$, the regression that yields factor returns $\fvec$ and specific returns $u$, the factor covariance $\Fmat$, and the specific diagonal $\Del$); Section~\ref{sec:decomp} composes them back into portfolio risk and attribution; Section~\ref{sec:caveat} recaps the line and gives a caveat. The numbers labelled as measured come from a single run of our personal build. Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
 
 \smallskip
 \textbf{Reference material.}
-\begin{itemize}[leftmargin=1.4em,nosep]
+\begin{itemize}[leftmargin=1.4em,topsep=2pt]
   \item External: Menchero, Orr \& Wang (2011), USE4 Methodology Notes \& Empirical Notes; Menchero, Wang \& Orr (2011), eigen-adjusted covariance.
 \end{itemize}
 \end{tcolorbox}
@@ -356,8 +356,8 @@ $\Corr(\text{beta},\text{country})=0.78$ is high, yet beta is kept as a separate
 
 Having a time series of factor returns $\fvec$, the model forecasts their $K\times K$ covariance $\Fmat$. A raw sample covariance is biased and unstable, so four corrections are layered on:
 \begin{enumerate}[leftmargin=1.6em,nosep]
-  \item \textbf{EWMA volatility and correlation.} Exponentially weighted moving averages let recent observations matter more. Volatilities and correlations are estimated \emph{separately}---a shorter half-life ($84$ days) for the volatilities and a longer one ($252$ days) for the correlation matrix, then recombined into the covariance---because volatility moves faster than co-movement.
-  \item \textbf{Newey--West autocorrelation correction} (lag $5$). Monthly factor returns carry serial correlation; ignoring it understates longer-horizon variance. The Newey--West adjustment folds in the lagged autocovariances.
+  \item \textbf{EWMA volatility and correlation.} Exponentially weighted moving averages let recent observations matter more. Volatilities and correlations are estimated \emph{separately}---a shorter half-life for the volatilities and a longer one for the correlation matrix, then recombined into the covariance---because volatility moves faster than co-movement.
+  \item \textbf{Newey--West autocorrelation correction.} Monthly factor returns carry serial correlation; ignoring it understates longer-horizon variance. The Newey--West adjustment folds in the lagged autocovariances.
   \item \textbf{Eigenfactor de-biasing} (Menchero, Wang \& Orr 2011). The sample's own eigen-portfolios have systematically biased variances---the most diversified directions are forecast too calm. Simulation calibrates a multiplier per eigen-direction that flattens this bias.
   \item \textbf{Volatility-regime scaler.} A final level adjustment so the overall forecast tracks the prevailing volatility regime rather than a long-run average.
 \end{enumerate}
@@ -494,7 +494,7 @@ contrib["specific"] = ctr_specific
 }
 
 \begin{center}\small\itshape
-References: Menchero, Orr \& Wang (2011), \textit{The Barra US Equity Model (USE4): Methodology Notes} and \textit{Empirical Notes}; Menchero, Wang \& Orr (2011), \textit{Eigen-Adjusted Covariance Matrices}. Empirical figures are from a personal first-principles build (factor-return panel through 2026-04-30; risk-decomposition snapshot 2026-03-31).
+References: Menchero, Orr \& Wang (2011), \textit{The Barra US Equity Model (USE4): Methodology Notes} and \textit{Empirical Notes}; Menchero, Wang \& Orr (2011), \textit{Eigen-Adjusted Covariance Matrices}. ESTU treated as an MSCI USA IMI proxy; measured quantities are from a personal build run.
 \end{center}
 
 \end{document}

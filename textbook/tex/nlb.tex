@@ -166,7 +166,6 @@ $n_i$ & raw NLB: the orthogonalisation residual $(\beta^{z}_i)^{3} - \gamma_t\,\
 $x_i$ & standardised NLB exposure for stock $i$ \\
 $w_i$ & cap weight of stock $i$ in the ESTU \\
 $\avg_{\text{cw}}, \std_{\text{ew}}$ & cap-weighted mean, equal-weighted standard deviation over the ESTU \\
-$Q_1,\dots,Q_5$ & quintiles of raw $n_i$ \\
 ESTU & estimation universe (MSCI USA IMI proxy) \\
 \bottomrule
 \end{tabular}
@@ -201,7 +200,7 @@ n_i \;=\; (\beta^{z}_i)^{3} \;-\; \gamma_t\,\beta^{z}_i .
 Subtracting $\gamma_t\,\beta^{z}_i$ strips out everything the straight line could explain, leaving only the bend. The residual is then trimmed and standardised. After the orthogonalisation the correlation with Beta collapses from about $0.75$ to essentially zero (Figure~\ref{fig:nlb_dist}, right), so Non-Linear Beta sits beside Beta as a genuinely separate axis rather than a second copy of it.
 
 \begin{pitfall}
-Skipping the orthogonalisation is the whole trap. A raw cube is three-quarters correlated with the linear exposure, so an un-orthogonalised ``non-linear'' factor would mostly re-measure Beta -- the model would carry two nearly-collinear beta columns and could not tell the linear loading from the curvature. The orthogonalisation is what makes the factor non-linear in substance and not just in name; it is removed on a cap-weighted basis, so the dollar-weighted linear relationship vanishes exactly while a negligible unweighted residual can remain.
+Skipping the orthogonalisation is the whole trap. A raw cube is three-quarters correlated with the linear exposure, so an un-orthogonalised ``non-linear'' factor would mostly re-measure Beta -- the model would carry two nearly-collinear beta columns and could not tell the linear loading from the curvature. The orthogonalisation is what makes the factor non-linear in substance and not just in name; it is removed on the weighted basis of that regression, so the weighted linear relationship vanishes exactly while a negligible unweighted residual can remain.
 \end{pitfall}
 
 \section{Reading the curvature, and the heavy tails}\label{sec:curve}
@@ -212,12 +211,12 @@ Skipping the orthogonalisation is the whole trap. A raw cube is three-quarters c
   \item Explain why the factor is so fat-tailed and comparatively unstable.
 \end{itemize}
 
-What the orthogonalised factor looks like, as a function of beta, is the clean S-shaped curve in Figure~\ref{fig:nlb_dist} (right). It is near zero for moderate-beta stocks, swings \emph{negative} for the mildly-extreme on each side, and then rises steeply to large positive values for the very highest betas and large negative values for the very lowest -- a sign-preserving curvature that, by construction, is uncorrelated with beta itself. In plain terms, Non-Linear Beta separates the genuinely \emph{extreme}-beta names from the merely moderate ones, over and above the linear ranking Beta already provides: it is the model's handle on ``how curved'' the beta dimension is at a given date.
+What the orthogonalised factor looks like, as a function of beta, is the clean odd, antisymmetric cubic curve in Figure~\ref{fig:nlb_dist} (right). It is near zero through the moderate middle and bends in opposite directions at the two ends: it climbs to large positive values for the very highest betas and falls to large negative values for the very lowest, with a gentle opposite-signed wiggle in between -- a slight dip just inside the high end, a slight rise just inside the low end. Being an odd, sign-preserving curve, it is uncorrelated with beta by construction. In plain terms, Non-Linear Beta loads most positively on the very highest-beta names and most negatively on the very lowest, leaving the moderate middle near zero: it accentuates the two ends of the beta dimension over and above the straight-line ranking Beta already provides, and so is the model's handle on how the beta--risk relationship curves at a given date.
 
 The cubing has a sharp consequence for the distribution. Raising a standardised quantity to the third power makes the tails enormous: a stock three standard deviations out in beta contributes a cube of twenty-seven, far beyond anything a level-based descriptor produces. The raw factor is therefore violently fat-tailed, which is why the three-standard-deviation trim does more work here than for most factors, and why even the trimmed, standardised exposure stays right-skewed and heavy-tailed. And because NLB is a deterministic function of the Beta exposure, it inherits Beta's estimation noise and \emph{amplifies} it at the extremes -- a small wobble in a large beta becomes a large wobble once cubed -- so its month-to-month stability is among the lowest in the model, on a par with momentum.
 
 \begin{observed}
-On the build run the raw NLB is the orthogonalisation residual of the cubed Beta exposure: by construction it is essentially uncorrelated with Beta (cap-weighted orthogonality to machine precision before the trim; a pooled correlation near zero after). The cube makes it heavily fat-tailed, so the three-standard-deviation trim clips $\approx 2.4\%$ of ESTU rows, above the usual $0.5$--$2\%$ band. After standardisation the cap-weighted mean is $0$ to machine precision and the equal-weighted standard deviation is $1.0$, with the exposure still right-skewed (skew $\approx 1.5$) and fat-tailed (excess kurtosis $\approx 5$); $\approx 97\%$ of ESTU rows fall inside $[\pm 3]$, but only $\approx 94\%$ of all scored stocks do, since the standardisation is calibrated on the investable universe. Month-over-month rank stability is among the lowest of the style factors, Spearman $\rho \approx 0.87$, the cube amplifying Beta's own noise. The deliverable is $\approx 1.84$M scored rows over $327$ dates and $\approx 16{,}450$ tickers -- exactly Beta's coverage, as a transform must inherit.
+On the build run the raw NLB is the orthogonalisation residual of the cubed Beta exposure: by construction it is essentially uncorrelated with Beta (the weighted orthogonality is machine-zero before the trim, the pooled correlation near zero after). The cube makes it heavily fat-tailed, so the three-standard-deviation trim clips $\approx 2.4\%$ of ESTU rows, above the usual $0.5$--$2\%$ band. After standardisation the cap-weighted mean is $0$ to machine precision and the equal-weighted standard deviation is $1.0$, with the exposure still right-skewed (skew $\approx 1.5$) and fat-tailed (excess kurtosis $\approx 4.6$); $\approx 97\%$ of ESTU rows fall inside $[\pm 3]$, but only $\approx 94\%$ of all scored stocks do, since the standardisation is calibrated on the investable universe. Month-over-month rank stability is among the lowest of the style factors, Spearman $\rho \approx 0.87$, the cube amplifying Beta's own noise. The deliverable is $\approx 1.84$M scored rows over $327$ dates and $\approx 16{,}450$ tickers -- exactly Beta's coverage, as a transform must inherit.
 \end{observed}
 
 \begin{figure}[htbp]
@@ -241,7 +240,7 @@ x_i \;=\; \frac{\tilde n_i - \avg_{\text{cw}}(\tilde n)}{\std_{\text{ew}}(\tilde
 with $\tilde n$ the trimmed residual. The cap-weighted centring and equal-weighted scaling place the curvature on the same mean-$0$, standard-deviation-$1$ footing as every other style exposure, so it can be combined with them on equal terms.
 
 \begin{exercise}
-A stock has a Beta exposure of $\beta^{z}=2.5$. Compute its cube. Then, taking the per-date slope to be roughly $\gamma_t \approx 3$, compute the orthogonalisation residual $\beta^{z\,3} - \gamma_t\beta^{z}$. Repeat for $\beta^{z}=0.5$. Which stock loads more heavily on Non-Linear Beta, and why does that match the ``extreme versus moderate'' reading?
+A stock has a Beta exposure of $\beta^{z}=2.5$. Compute its cube. Then, taking the per-date slope to be roughly $\gamma_t \approx 3$, compute the orthogonalisation residual $(\beta^{z})^{3} - \gamma_t\,\beta^{z}$. Repeat for $\beta^{z}=0.5$. Which stock loads more heavily on Non-Linear Beta, and how do the sign and size of each residual reflect the curvature the factor captures?
 \end{exercise}
 
 \begin{exercise}
@@ -260,7 +259,7 @@ Non-Linear Beta is less month-to-month stable than Beta itself ($\rho \approx 0.
   \item State the central limitation.
 \end{itemize}
 
-The build, end to end: take the standardised Beta exposure; cube it to bend sharply at the extremes; orthogonalise the cube to Beta -- a cap-weighted, no-intercept regression whose residual strips out the linear part -- so that only curvature remains; trim the residual at three standard deviations, which the cube's heavy tails make essential; and standardise to cap-weighted mean $0$, equal-weighted standard deviation $1$. The output is a curvature factor: uncorrelated with Beta by construction, sharply fat-tailed, and inheriting Beta's coverage exactly.
+The build, end to end: take the standardised Beta exposure; cube it to bend sharply at the extremes; orthogonalise the cube to Beta -- a $\sqrt{\text{mcap}}$-weighted, no-intercept regression whose residual strips out the linear part -- so that only curvature remains; trim the residual at three standard deviations, which the cube's heavy tails make essential; and standardise to cap-weighted mean $0$, equal-weighted standard deviation $1$. The output is a curvature factor: uncorrelated with Beta by construction, sharply fat-tailed, and inheriting Beta's coverage exactly.
 
 \begin{keyresult}
 Non-Linear Beta is the cubic curvature of the beta dimension with the linear part removed. The one computation that matters is the orthogonalisation: without it the cube is three-quarters Beta; with it, the factor is pure non-linearity.
