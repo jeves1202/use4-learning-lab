@@ -112,11 +112,11 @@
 \thispagestyle{empty}
 
 \begin{abstract}
-Book-to-Price (BP) is the value factor: it asks how much accounting net worth you are buying per dollar of market price. Mechanically it is almost trivial, a single descriptor, $\mathrm{BTOP}=$ book equity divided by market capitalisation, standardised across the estimation universe, so most of the work is plumbing rather than mathematics. But the ratio carries three honest wrinkles that a faithful build must resolve on purpose. The data source has no preferred-equity balance field (so USE4's ``total minus preferred'' definition cannot be applied as written); some firms genuinely have negative book equity; and the numerator is a slow accounting stock while the denominator is a live price. This set explains the value story behind BP, states the USE4 definition, and shows how the personal build handles each wrinkle: using total common equity where preferred is unavailable, retaining negative book equity as real information, and trusting the latest filing only within a staleness window. The payoff is a clean, near-symmetric exposure with a stable, monotone value gradient.
+Book-to-Price (BTOP) is the value factor: it asks how much accounting net worth you are buying per dollar of market price. Mechanically it is almost trivial, a single descriptor, $\mathrm{BTOP}=$ book equity divided by market capitalization, standardized across the estimation universe, so most of the work is plumbing rather than mathematics. But the ratio carries three honest wrinkles that a faithful build must resolve on purpose. The data source has no preferred-equity balance field (so USE4's ``total minus preferred'' definition cannot be applied as written); some firms genuinely have negative book equity; and the numerator is a slow accounting stock while the denominator is a live price. This set explains the value story behind BTOP, states the USE4 definition, and shows how the personal build handles each wrinkle: using total common equity where preferred is unavailable, retaining negative book equity as real information, and trusting the latest filing only within a staleness window. The payoff is a clean, near-symmetric exposure with a stable, monotone value gradient.
 \end{abstract}
 
 \begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
-\textbf{How to read these notes.} We move from the economic idea of value to the USE4 definition, then to the build mechanics, then to the three data wrinkles, and finally to trimming, standardisation, and a recap. Read Section~\ref{sec:what} for the intuition; if you only want the recipe, Sections~\ref{sec:def}--\ref{sec:std} suffice. The numbers labelled as measured come from a single run of our personal build. Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
+\textbf{How to read these notes.} We move from the economic idea of value to the USE4 definition, then to the build mechanics, then to the three data wrinkles, and finally to trimming, standardization, and a recap. Read Section~\ref{sec:what} for the intuition; if you only want the recipe, Sections~\ref{sec:def}--\ref{sec:std} suffice. The numbers labelled as measured come from a single run of our personal build. Four colored boxes reoccur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
 
 \medskip
 \textbf{Reference material.}
@@ -132,23 +132,23 @@ Book-to-Price (BP) is the value factor: it asks how much accounting net worth yo
 
 \paragraph{Learning objectives.}
 \begin{itemize}[leftmargin=1.4em,nosep]
-  \item State what BP measures in one sentence (accounting net worth per dollar of price).
+  \item State what BTOP measures in one sentence (accounting net worth per dollar of price).
   \item Explain why ``cheap relative to book'' is a co-moving, premium-earning style.
-  \item Recognise BP as a standardised ratio of two quantities living on different clocks.
+  \item Recognise BTOP as a standardized ratio of two quantities living on different clocks.
 \end{itemize}
 
-Book-to-Price is the classic \emph{value} factor. Its raw ingredient is the ratio of a firm's \emph{book equity}, the accountant's tally of net worth (assets minus liabilities), to its \emph{market capitalisation}, the price the market is paying for that net worth today. A high ratio means you get a lot of book value per dollar of price: the stock is ``cheap relative to book.'' A low ratio means you are paying a large premium over book: the stock is ``expensive,'' the glamour or growth end of the spectrum.
+Book-to-Price is the classic \emph{value} factor. Its raw ingredient is the ratio of a firm's \emph{book equity}, the accountant's tally of net worth (assets minus liabilities), to its \emph{market capitalization}, the price the market is paying for that net worth today. A high ratio means you get a lot of book value per dollar of price: the stock is ``cheap relative to book.'' A low ratio means you are paying a large premium over book: the stock is ``expensive,'' the glamor or growth end of the spectrum.
 
-BP is the \emph{asset-based} expression of value. It values the firm against its recorded net assets, the balance-sheet route to value, rather than against a flow such as earnings. That framing matters later: its structural blind spot is precisely the assets accounting does not record (Section~\ref{sec:summary}). It also gives the value axis a concrete cross-section. The high-BTOP, value end is populated by firms with large balance sheets relative to price, banks, insurers, mature industrials, and energy; the low-BTOP, glamour end by high-multiple technology and biotech, whose worth lives in growth options and intangibles rather than recorded assets.
+BTOP is the \emph{asset-based} expression of value. It values the firm against its recorded net assets, the balance-sheet route to value, rather than against a flow such as earnings. That framing matters later: its structural blind spot is precisely the assets accounting does not record (Section~\ref{sec:summary}). It also gives the value axis a concrete cross-section. The high-BTOP, value end is populated by firms with large balance sheets relative to price, banks, insurers, mature industrials, and energy; the low-BTOP, glamor end by high-multiple technology and biotech, whose worth lives in growth options and intangibles rather than recorded assets.
 
-The value effect is the empirical observation that cheap-relative-to-book stocks tend to move together and, over long horizons, have earned a premium over their expensive counterparts. Whether this is compensation for bearing risk, a reward for patience, or a behavioural correction of over-extrapolated growth is a debate we do not adjudicate here. For risk-model purposes the point is narrower and firmer: BP captures a real, persistent axis of common return variation, so it earns a place as a style factor.
+The value effect is the empirical observation that cheap-relative-to-book stocks tend to move together and, over long horizons, have earned a premium over their expensive counterparts. Whether this is compensation for bearing risk, a reward for patience, or a behavioral correction of over-extrapolated growth is a debate we do not adjudicate here. For risk-model purposes the point is narrower and firmer: BTOP captures a real, persistent axis of common return variation, so it earns a place as a style factor.
 
 \begin{intuition}
-Book equity is a \emph{slow} number. It is struck once a quarter from a balance sheet and moves like a glacier: retained earnings drift in, buybacks drift out. Price is a \emph{fast} number, repriced every second the market is open. Book-to-Price holds the slow anchor up against the fast price and asks how many dollars of accounting net worth you are handed for each dollar you pay. When price runs far ahead of book, the ratio falls and the name reads as glamour; when price sags toward or below book, the ratio rises and the name reads as value.
+Book equity is a \emph{slow} number. It is struck once a quarter from a balance sheet and moves like a glacier: retained earnings drift in, buybacks drift out. Price is a \emph{fast} number, repriced every second the market is open. Book-to-Price holds the slow anchor up against the fast price and asks how many dollars of accounting net worth you are handed for each dollar you pay. When price runs far ahead of book, the ratio falls and the name reads as glamor; when price sags toward or below book, the ratio rises and the name reads as value.
 \end{intuition}
 
 \begin{keyresult}
-The BP exposure is the \emph{standardised} ratio of book equity to market capitalisation. The economic content is entirely in that ratio; standardisation only re-expresses it on a common, comparable scale across the universe.
+The BTOP exposure is the \emph{standardized} ratio of book equity to market capitalization. The economic content is entirely in that ratio; standardization only re-expresses it on a common, comparable scale across the universe.
 \end{keyresult}
 
 \section*{Notation}
@@ -162,9 +162,9 @@ Symbol & Meaning \\
 $B_i$ & book value of common equity for stock $i$ (point-in-time, latest filing) \\
 $E_i$ & total stockholders' equity for stock $i$ (the reported balance-sheet line) \\
 $P_i$ & preferred equity for stock $i$; $B_i = E_i - P_i$, with $P_i$ taken as $0$ in the build \\
-$M_i$ & market capitalisation of stock $i$ at the signal date \\
+$M_i$ & market capitalization of stock $i$ at the signal date \\
 $\mathrm{BTOP}_i$ & raw descriptor, $B_i / M_i$ \\
-$z_i$ & standardised BP exposure for stock $i$ \\
+$z_i$ & standardized BTOP exposure for stock $i$ \\
 $W$ & staleness window: maximum admissible filing age ($\approx$ eighteen months) \\
 $\mathrm{ESTU}$ & estimation universe (MSCI USA IMI proxy) \\
 $\avg_{\mathrm{cw}}(\cdot)$ & cap-weighted mean over the ESTU \\
@@ -178,19 +178,19 @@ $\std_{\mathrm{ew}}(\cdot)$ & equal-weighted standard deviation over the ESTU \\
 \paragraph{Learning objectives.}
 \begin{itemize}[leftmargin=1.4em,nosep]
   \item Reproduce the USE4 BTOP descriptor and its weight from memory.
-  \item State the target standardisation (cap-weighted mean $0$, equal-weighted std $1$).
+  \item State the target standardization (cap-weighted mean $0$, equal-weighted std $1$).
 \end{itemize}
 
 USE4 carries value through a single descriptor. The Book-to-Price descriptor is
 \[
   \mathrm{BTOP}_i \;=\; \frac{B_i}{M_i}
-  \;=\; \frac{\text{book value of common equity}}{\text{market capitalisation}},
+  \;=\; \frac{\text{book value of common equity}}{\text{market capitalization}},
 \]
 and it enters the Book-to-Price factor with descriptor weight $1.0$; the factor \emph{is} this single ratio (Menchero, Orr \& Wang 2011, Empirical Notes, App. A). Book equity is defined there as total equity minus preferred equity, $B_i = E_i - P_i$, so that the numerator reflects what belongs to common shareholders rather than to preferred holders ahead of them.
 
-Raw ratios are not comparable across a universe spanning thousands of names, so the descriptor is standardised. The USE4 convention is to subtract the \emph{cap-weighted} mean and divide by the \emph{equal-weighted} standard deviation over the ESTU (Methodology Notes, Sec. 2.3). Writing $M_n$ for the cap of name $n$ and $d_n=\mathrm{BTOP}_n$, the centring mean is
+Raw ratios are not comparable across a universe spanning thousands of names, so the descriptor is standardized. The USE4 convention is to subtract the \emph{cap-weighted} mean and divide by the \emph{equal-weighted} standard deviation over the ESTU (Methodology Notes, Sec. 2.3). Writing $M_n$ for the cap of name $n$, the centring mean is
 \[
-  \avg_{\mathrm{cw}}(\mathrm{BTOP}) \;=\; \frac{\sum_n M_n\, d_n}{\sum_n M_n},
+  \avg_{\mathrm{cw}}(\mathrm{BTOP}) \;=\; \frac{\sum_n M_n\, \mathrm{BTOP}_n}{\sum_n M_n},
   \qquad
   z_i \;=\; \frac{\mathrm{BTOP}_i - \avg_{\mathrm{cw}}(\mathrm{BTOP})}
                   {\std_{\mathrm{ew}}(\mathrm{BTOP})}.
@@ -201,11 +201,11 @@ The mean is cap-weighted but the dispersion is equal-weighted, and this asymmetr
 \end{remark}
 
 \begin{remark}
-Because BP is a single descriptor at weight $1.0$, there is no within-factor blending to tune. Every engineering decision instead goes to the clock alignment of numerator and denominator and to the three data holes of Section~\ref{sec:holes}; that is why those sections, not this one, carry the work.
+Because BTOP is a single descriptor at weight $1.0$, there is no within-factor blending to tune. Every engineering decision instead goes to the clock alignment of numerator and denominator and to the three data holes of Section~\ref{sec:holes}; that is why those sections, not this one, carry the work.
 \end{remark}
 
 \begin{definition}
-The \emph{Book-to-Price exposure} of stock $i$ is the standardised value $z_i$ above, with $B_i$ the point-in-time book value of common equity and $M_i$ the signal-date market capitalisation, both measured over the ESTU.
+The \emph{Book-to-Price exposure} of stock $i$ is the standardized value $z_i$ above, with $B_i$ the point-in-time book value of common equity and $M_i$ the signal-date market capitalization, both measured over the ESTU.
 \end{definition}
 
 \section{How we compute it}\label{sec:compute}
@@ -219,9 +219,9 @@ The \emph{Book-to-Price exposure} of stock $i$ is the standardised value $z_i$ a
 
 \textbf{Numerator.} We take the last reported common book equity from Sharadar SF1 in its as-reported quarterly form, selected point-in-time by \emph{filing} date (\texttt{datekey}) on or before the signal date. The choice of dimension matters. Book equity is a balance-sheet \emph{stock}, a level measured at an instant, like a reservoir's depth, not a flow accumulated over a period. The as-reported quarterly snapshot is therefore the right object, and we never annualise it or sum it across quarters.
 
-\textbf{Denominator.} The denominator is the same signal-date market capitalisation used throughout the build, so BP shares its market-cap definition with every other factor and there is no bespoke price series to reconcile.
+\textbf{Denominator.} The denominator is the same signal-date market capitalization used throughout the build, so BTOP shares its market-cap definition with every other factor and there is no bespoke price series to reconcile.
 
-\textbf{The clock mismatch is intentional.} The numerator is as of the last filing while the denominator is as of today. Far from being a bug, this is the whole point. Book equity is a lagged, slowly-moving fundamental; price is current. A value signal is precisely the comparison of a fresh price against a settled accounting anchor. If we staled the price to match the book, we would throw away the very repricing that makes a stock look cheap or dear.
+\textbf{The clock mismatch is intentional.} The numerator is as of the last filing while the denominator is as of today. Far from being a bug, this is the whole point. Book equity is a lagged, slowly-moving fundamental; price is current. A value signal is precisely the comparison of a fresh price against a settled accounting anchor. If we staled the price to match the book, we would throw away the very repricing that makes a stock look cheap or expensive.
 
 \begin{observed}
 Across the ESTU the median BTOP is $\approx 0.41$ in the personal build run, so the typical name's price is roughly two and a half times its common book value ($\text{P/B}\approx 2.4$), a sensible figure for a broad US universe. A single-date sanity cut agrees: at 2026-05-29 the build covers $\approx 4{,}705$ tickers with median BTOP $\approx 0.39$, consistent with the pooled figure.
@@ -243,11 +243,11 @@ Two ways to corrupt the numerator. First, pairing the balance-sheet \emph{stock}
 USE4's definition is clean on paper but underdetermined against real data. Three gaps must be filled with explicit, defensible choices.
 
 \subsection*{(a) Which equity}
-USE4 wants book equity $= E_i - P_i$, total equity minus preferred equity. The data source, however, carries no preferred-equity balance field, so there is nothing to subtract:
+USE4 wants book equity $= E_i - P_i$, total equity minus preferred equity. Sharadar, however, carries no preferred-equity balance field, so there is nothing to subtract:
 \[
   B_i \;=\; E_i - P_i \;=\; E_i - 0 \;=\; E_i \quad(\text{total common equity}).
 \]
-Knowing the sign of a bias is half of controlling it. Preferred equity is non-negative, so omitting it can only \emph{overstate} $B_i$ by a non-negative amount: the error has a known sign and a bounded reach. The consequence is a small, one-directional bias. For the rare preferred-heavy names, some financials and utilities, $B_i$ is slightly too large, which inflates BTOP and pulls those names a touch toward the value end. The bias damps rather than inverts: it can never flip a value name into a glamour name or move the sign, it never moves a typical name materially, and it is absent for the vast majority that carry no preferred stock. We record it as a documented data limitation, not a silent approximation.
+Knowing the sign of a bias is half of controlling it. Preferred equity is non-negative, so omitting it can only \emph{overstate} $B_i$ by a non-negative amount: the error has a known sign and a bounded reach. The consequence is a small, one-directional bias. For the rare preferred-heavy names, some financials and utilities, $B_i$ is slightly too large, which inflates BTOP and pulls those names a touch toward the value end. The bias damps rather than inverts: it can never flip a value name into a glamor name or move the sign, it never moves a typical name materially, and it is absent for the vast majority that carry no preferred stock. We record it as a documented data limitation, not a silent approximation.
 
 \subsection*{(b) Negative book equity}
 Some firms have \emph{negative} book equity, from accumulated deficits, or from so much capital returned via buybacks that cumulative distributions push recorded equity below zero. Their BTOP is negative. The build \emph{retains} these as valid, negative exposures.
@@ -257,14 +257,14 @@ A negative book value is not a data glitch to be floored or discarded; it is a s
 \end{intuition}
 
 \begin{observed}
-In the personal build, negative book equity is not a curiosity (Figure~\ref{fig:bp_dist}): it appears in $\approx 49$k filing rows of the ARQ source (out of $\approx 609$k filings across $\approx 15.7$k tickers), while genuinely null equity is negligible (a couple hundred filing rows, well under $0.1\%$). Negative BTOP is a real, populated tail, not an artefact.
+In the personal build, negative book equity is not a curiosity (Figure~\ref{fig:btop_dist}): it appears in $\approx 49$k filing rows of the ARQ source (out of $\approx 609$k filings across $\approx 15.7$k tickers), while genuinely null equity is negligible (a couple hundred filing rows, well under $0.1\%$). Negative BTOP is a real, populated tail, not an artifact.
 \end{observed}
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=\linewidth]{figures/bp_dist.png}
+\includegraphics[width=\linewidth]{figures/btop_dist.png}
 \caption{The Book-to-Price cross-section, pooled over in-ESTU stock-dates. The ratio is well-behaved --- a right-skewed bulk around a median of $\approx 0.40$ --- but a genuine $\approx 3.8\%$ of names fall in the shaded region of \emph{negative} book equity, left of the red zero line, which the build retains as real information rather than flooring or dropping. The few values beyond the plotted range are the symmetric three-sigma trim boundaries.}
-\label{fig:bp_dist}
+\label{fig:btop_dist}
 \end{figure}
 
 \begin{pitfall}
@@ -277,78 +277,74 @@ Flooring negative book equity at zero, or dropping the names outright, throws aw
 A filing on or before the signal date is only trustworthy for so long. The build uses the latest filing within a staleness window $W$ of roughly a year and a half (about eighteen months). Beyond that, the book value is treated as missing rather than trusted, since a balance sheet that has not been refreshed in that long no longer describes the firm. This keeps stale anchors from masquerading as current fundamentals.
 
 \begin{observed}
-The combination of a pre-first-filing ramp (new names with no balance sheet yet) and occasional staleness lapses leaves in-ESTU missingness at only $\approx 0.7\%$ in the build run, low enough that BP covers essentially the whole estimation universe. The full deliverable is $\approx 1.64$M rows over $330$ dates and $\approx 15.7$k tickers.
+The combination of a pre-first-filing ramp (new names with no balance sheet yet) and occasional staleness lapses leaves in-ESTU missingness at only $\approx 0.7\%$ in the build run, low enough that BTOP covers essentially the whole estimation universe. The full deliverable is $\approx 1.64$M rows over $330$ dates and $\approx 15.7$k tickers.
 \end{observed}
 
-\section{Trim and standardisation}\label{sec:std}
+\section{Trim and standardization}\label{sec:std}
 
 \paragraph{Learning objectives.}
 \begin{itemize}[leftmargin=1.4em,nosep]
-  \item Explain why the generic three-sigma trim is appropriate for BP.
-  \item Read the post-standardisation diagnostics and judge them ``clean.''
+  \item Explain why the generic three-sigma trim is appropriate for BTOP.
+  \item Read the post-standardization diagnostics and judge them ``clean.''
 \end{itemize}
 
-BP is a well-behaved descriptor. Unlike a size measure, whose distribution is dominated by a few enormous names and whose centre is pulled around by them, BTOP is roughly symmetric and has no mega-cap-driven location problem. The generic USE4 three-standard-deviation trim around the cap-weighted mean (Methodology Notes, Sec. 2.2) is therefore exactly the right tool, and it bites only a small fraction of the universe before we standardise to cap-weighted mean $0$ and equal-weighted std $1$. What it bites is reassuring: the upper-tail clips fall mainly on high-BTOP small-caps and on large-balance-sheet financials trading near or below tangible book, bounded outliers rather than deleted signal.
+BTOP is a well-behaved descriptor. Unlike a size measure, whose distribution is dominated by a few enormous names and whose centre is pulled around by them, BTOP is roughly symmetric and has no mega-cap-driven location problem. The generic USE4 three-standard-deviation trim around the cap-weighted mean (Methodology Notes, Sec. 2.2) is therefore exactly the right tool, and it bites only a small fraction of the universe before we standardize to cap-weighted mean $0$ and equal-weighted std $1$. What it bites is reassuring: the upper-tail clips fall mainly on high-BTOP small-caps and on large-balance-sheet financials trading near or below tangible book, bounded outliers rather than deleted signal.
 
 \begin{observed}
 From the personal build run:
 \begin{itemize}[leftmargin=1.4em,nosep]
   \item Trim clips $\approx 1.4\%$ of ESTU rows, a normal, small rate (contrast a size factor, where the heavy tail forces far more aggressive clipping).
   \item Post-trim ESTU BTOP: mean $\approx 0.45$, std $\approx 0.41$, skew $\approx 0.6$, a mild right skew with no pathology.
-  \item After standardisation: cap-weighted mean $\approx 0$ to machine precision ($\sim 10^{-16}$), equal-weighted std $= 1.0$.
+  \item After standardization: cap-weighted mean $\approx 0$ to machine precision ($\sim 10^{-16}$), equal-weighted std $= 1.0$.
   \item $\approx 97.5\%$ of ESTU rows fall within $[\pm 3]$ (versus $\approx 90\%$ across all coverage), a clean, near-symmetric exposure.
   \item Month-over-month rank stability: Spearman $\rho \approx 0.977$, so the value ordering barely moves between months, as a slow fundamental should.
-  \item Quintile BTOP means are monotone, $\approx 0.04$ (Q1) to $1.06$ (Q5), a spread of $\approx 1.02$, so the exposure cleanly separates cheap from dear.
+  \item Quintile BTOP means are monotone, $\approx 0.04$ (Q1) to $1.06$ (Q5), a spread of $\approx 1.02$, so the exposure cleanly separates cheap from expensive.
 \end{itemize}
 \end{observed}
 
 \begin{keyresult}
-The diagnostics describe a textbook-clean style exposure: a small symmetric trim, exact target moments, a tight $[\pm 3]$ envelope, high month-to-month persistence, and a monotone quintile gradient. The monotone gradient confirms the descriptor orders names from dear to cheap as intended; it is a \emph{construction} diagnostic, not evidence of the value premium itself, which lives in the factor-return stage outside this build. BP needs none of the special handling a heavy-tailed, mega-cap-dominated descriptor demands.
+The diagnostics describe a textbook-clean style exposure: a small symmetric trim, exact target moments, a tight $[\pm 3]$ envelope, high month-to-month persistence, and a monotone quintile gradient. The monotone gradient confirms the descriptor orders names from expensive to cheap as intended; it is a \emph{construction} diagnostic, not evidence of the value premium itself, which lives in the factor-return stage outside this build. BTOP needs none of the special handling a heavy-tailed, mega-cap-dominated descriptor demands.
 \end{keyresult}
 
 \begin{example}
-Take a firm with common book equity of \$8\,B and market cap \$20\,B. Its raw $\mathrm{BTOP} = 0.40$, essentially the universe median of $\approx 0.41$. After centring on the (positive) cap-weighted mean and scaling, this name lands near $z \approx 0$: a neutral value tilt, neither cheap nor dear relative to the market. Hold $B_i$ fixed and let the price double, so $M_i = \$40$\,B; then $\mathrm{BTOP}$ halves to $\half\cdot 0.40 = 0.20$ and the name slides toward the glamour end. The denominator, the live price, is what moves the signal day to day.
+Take a firm with common book equity of \$8\,B and market cap \$20\,B. Its raw $\mathrm{BTOP} = 0.40$, essentially the universe median of $\approx 0.41$. After centring on the (positive) cap-weighted mean and scaling, this name lands near $z \approx 0$: a neutral value tilt, neither cheap nor expensive relative to the market. Hold $B_i$ fixed and let the price double, so $M_i = \$40$\,B; then $\mathrm{BTOP}$ halves to $\half\cdot 0.40 = 0.20$ and the name slides toward the glamor end. The denominator, the live price, is what moves the signal day to day.
 \end{example}
 
 \begin{exercise}
-A firm buys back so much stock that its common book equity turns to $-\$1\,B$ while its market cap stays at \$10\,B. Compute its raw BTOP, and say which tail of the standardised distribution it occupies and why. (Hint: a negative numerator over a positive denominator; ask whether that reads as ``cheap'' or ``expensive relative to book.'')
+A firm buys back so much stock that its common book equity turns to $-\$1\,B$ while its market cap stays at \$10\,B. Compute its raw BTOP, and say which tail of the standardized distribution it occupies and why. (Hint: a negative numerator over a positive denominator; ask whether that reads as ``cheap'' or ``expensive relative to book.'')
 \end{exercise}
 
 \begin{exercise}
-Suppose preferred equity \emph{were} available and you subtracted it for a preferred-heavy utility. Trace the sign through the ratio and then through standardisation: would its BTOP rise or fall, and would the name move toward the value or the glamour end? (Hint: subtracting a positive quantity from the numerator lowers $B_i$.)
+Suppose preferred equity \emph{were} available and you subtracted it for a preferred-heavy utility. Trace the sign through the ratio and then through standardization: would its BTOP rise or fall, and would the name move toward the value or the glamor end? (Hint: subtracting a positive quantity from the numerator lowers $B_i$.)
 \end{exercise}
 
 \begin{exercise}
 At a signal date you hold two candidate filings for one ticker: one $\approx 10$ months old, one $\approx 20$ months old. Which does the build select, and what happens if only the $\approx 20$-month filing exists? Map each outcome onto the two sources of in-ESTU missingness. (Hint: backward as-of within a window of about eighteen months; beyond it the value is treated as missing, not used, which feeds the staleness-lapse slice rather than the pre-first-filing ramp.)
 \end{exercise}
 
-\begin{exercise}
-The reported cap-weighted mean after standardisation is $\sim 10^{-16}$, not literally $0$. Explain why. (Hint: floating-point cancellation in a weighted sum of $\sim 10^{5}$ terms; the construction forces the true mean to zero, but finite-precision arithmetic leaves a residue near machine epsilon.)
-\end{exercise}
-
-\section{Summary, and one caveat}\label{sec:summary}
+\section{Summary}\label{sec:summary}
 
 \paragraph{Learning objectives.}
 \begin{itemize}[leftmargin=1.4em,nosep]
-  \item Recite the BP pipeline end to end in one breath.
+  \item Recite the BTOP pipeline end to end in one breath.
   \item Name the structural limitation of book value as a value yardstick.
 \end{itemize}
 
-\textbf{Compositional recap.} Take last-filing, point-in-time common book equity; divide by signal-date market capitalisation to form BTOP; trim at three standard deviations around the cap-weighted mean; standardise to cap-weighted mean $0$ and equal-weighted std $1$ over the ESTU:
+\textbf{Compositional recap.} Take last-filing, point-in-time common book equity; divide by signal-date market capitalization to form BTOP; trim at three standard deviations around the cap-weighted mean; standardize to cap-weighted mean $0$ and equal-weighted std $1$ over the ESTU:
 \[
   \underbrace{B_i}_{\text{PIT, latest filing}} \Big/ \underbrace{M_i}_{\text{signal-date cap}}
   \;=\; \mathrm{BTOP}_i
   \;\xrightarrow{\;\text{trim }3\sigma\;}\;
-  \;\xrightarrow{\;\text{standardise}\;}\; z_i.
+  \;\xrightarrow{\;\text{standardize}\;}\; z_i.
 \]
 One ratio, two corrections, a clean exposure.
 
 \begin{pitfall}
-\textbf{The caveat.} Book value is an accounting number: conservative, backward-looking, and blind to internally-generated intangibles (brands, R\&D, software, accumulated know-how) that are expensed rather than capitalised and so never appear on the balance sheet. A firm whose worth is mostly intangible carries a small book and therefore a low BTOP, so BP reads it as ``expensive'' even when, on a full-economic-value basis, it is not. This is a structural mismeasurement of the yardstick, not a build error, and it has grown more material as the economy has tilted toward intangible-heavy businesses. It is the exact dual of the asset-based framing of Section~\ref{sec:what}: BP sees recorded net assets well and unrecorded ones not at all. Compounding it slightly, the missing preferred-equity field overstates book for preferred-heavy names, damping their value tilt. The natural levers are an intangible-adjusted book measure on the numerator and a preferred-equity balance field to honour the ``total minus preferred'' definition as written.
+\textbf{Intangible accounting.} Book value is an accounting number: conservative, backward-looking, and blind to internally-generated intangibles (brands, R\&D, software, accumulated know-how) that are expensed rather than capitalized and so never appear on the balance sheet. A firm whose worth is mostly intangible carries a small book and therefore a low BTOP, so BTOP reads it as ``expensive'' even when, on a full-economic-value basis, it is not. This is a structural mismeasurement of the yardstick, not a build error, and it has grown more material as the economy has tilted toward intangible-heavy businesses. It is the exact dual of the asset-based framing of Section~\ref{sec:what}: BTOP sees recorded net assets and does not see unrecorded ones. Compounding it slightly, the missing preferred-equity field overstates book for preferred-heavy names, damping their value tilt. The natural levers are an intangible-adjusted book measure on the numerator and a preferred-equity balance field to honor the ``total minus preferred'' definition as written.
 \end{pitfall}
 
 \begin{remark}
-None of these caveats undermines BP as built. They mark the edges of what an accounting-based value factor can see, and they tell you exactly where to look first if you ever want to sharpen it.
+None of these caveats undermines BTOP as built. They mark the edges of what an accounting-based value factor can see, and they tell you exactly where to look first if you ever want to sharpen it.
 \end{remark}
 
 \begin{center}\small\itshape

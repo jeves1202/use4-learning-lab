@@ -373,7 +373,7 @@ The regression is weighted by √mcap (not mcap, not equal weights). This is USE
 
 ### Validation CSR
 
-The validation runs a constrained WLS regression over every completed month-transition (exposure date t → next signal date t+1) to confirm the full system is well-posed and the Country factor return behaves as USE4 describes. Key checks:
+The validation runs a constrained WLS regression over every completed month-transition (exposure date t → next signal date t+1) to confirm the full system is well-posed and the Country factor return behaves as USE4 describes. This is a proving run, not the production CSR: step `05_csr` re-implements the same engine as the model's single canonical source, with stricter sample rules (thin transitions with fewer than 100 complete-case stocks are skipped), so its transition count is lower than the validation CSR's by design. Key checks:
 
 | Check | Gate | USE4 reference |
 |---|---|---|
@@ -393,7 +393,7 @@ The Ken French daily risk-free rate series publishes with a lag of several weeks
 
 ### Output schema
 
-**`data/country_use4.parquet`** (the model anchor):
+**`data/out/country_use4.parquet`** (the model anchor):
 
 | Column | Type | Description |
 |---|---|---|
@@ -404,7 +404,7 @@ The Ken French daily risk-free rate series publishes with a lag of several weeks
 | `country` | Float64 | Country exposure — always exactly 1.0 |
 | `w_reg` | Float64 | √mcap regression weight, normalized to sum to 1 per date |
 
-**`data/csr_validation_returns.parquet`** (validation artifact, not a model deliverable):
+**`data/out/csr_validation_returns.parquet`** (validation artifact, not a model deliverable):
 
 | Column | Type | Description |
 |---|---|---|
@@ -417,11 +417,25 @@ The Ken French daily risk-free rate series publishes with a lag of several weeks
 
 ---
 
-## Putting it together
+## From exposures to a risk model
 
-The cross-sectional regression that uses all these exposures runs **after** all factor exposure deliverables are built. Its design matrix has `n_stocks_t` rows and 67 columns: 1 country + 54 reduced-industry (post-reparametrization) + 12 style, plus the 55th industry return recovered from the constraint. The regression runs per month-transition, recovering 68 factor returns from the cross-section of stock returns.
+Everything above builds the exposure matrix `X`. Steps 05–08 turn it into a usable risk model — the master identity being
 
-**Build order enforced by the pipeline:**
+```
+σ²_p  =  wᵀ X F Xᵀ w  +  wᵀ Δ w
+```
+
+with `F` the factor covariance matrix and `Δ` the diagonal of specific variances. Each stage has its own spec and reference audit; this is just the map.
+
+**05 — Cross-sectional regression** (`05_csr/csr_spec.ipynb`). The engine of the model. Per month-transition, regress realized excess returns on `[country | 55 industries | 12 styles]` by WLS with √mcap weights and the cap-weighted zero-sum industry constraint (imposed by exact reparametrization, as above). Two deliverables: **factor returns** (`csr_factor_returns.parquet`) and **specific returns** (`csr_specific_returns.parquet`, extended out-of-sample to non-ESTU coverage stocks). Then the **daily sibling** (`05_csr/daily_csr_spec.ipynb`): the same engine run per trading day with month-end exposures held fixed intramonth. The daily factor returns and daily ESTU residuals are "Layer 0" for both stages that follow — ~6,300 daily observations instead of ~300 monthly ones is what makes a 68×68 covariance estimable at all.
+
+**06 — Factor covariance** (`06_fcov/fcov_spec.ipynb`). Four layers, per month-end, strictly point-in-time: EWMA second moments with separate half-lives for volatilities (fast) and correlations (slow); Newey–West correction for serial correlation, then ×21 to a monthly horizon; Monte-Carlo **eigenfactor de-biasing** (simulated panels reveal how sample covariance systematically under-prices low-variance eigenportfolios — the headline correction); and a volatility-regime multiplier that scales the whole matrix to current conditions. Deliverable: a symmetric PSD 68×68 forecast per month-end.
+
+**07 — Specific risk** (`07_specific_risk/specific_risk_spec.ipynb`). Five layers from daily CSR residuals to a per-stock monthly idiosyncratic vol: time-series EWMA + Newey–West variance; a structural log-vol-on-styles regression for names with thin history; a depth-and-recency coverage blend between the two; empirical-Bayes shrinkage toward size-decile peers (which fixes the small-cap under-forecast — the specific-risk analogue of the eigenfactor smile); and a volatility-regime multiplier. Consumes step 05's daily residuals directly — it does not depend on 06.
+
+**08 — Risk decomposition** (`08_risk_decomp/risk_decomp_spec.ipynb`). Composes X, F, and Δ into portfolio risk without ever forming the N×N asset covariance. Factor-vs-specific split, Euler attribution (contributions that sum exactly to portfolio σ), group attribution (country / industry / style / specific), and active risk against the cap-weighted ESTU. Validated end-to-end with realized-vs-forecast bias statistics on canonical test portfolios. Runs last.
+
+**Build order:**
 
 ```
 estu_build
@@ -431,7 +445,14 @@ estu_build
                 ├──► nlb            (needs beta)
                 └──► nls            (needs size)
   └──► industries_build             (needs estu only)
-  └──► country_build                (needs all of the above — runs last)
+  └──► country_build                (needs all exposures)
+         └──► csr_build             (monthly production CSR)
+                └──► daily_csr_build
+                       ├──► fcov_build
+                       └──► specific_risk_build      (daily residuals only — not via fcov)
+                              └──► risk_decomp_build  (needs fcov too — runs last)
 ```
+
+The monthly CSR design matrix has `n_stocks_t` rows and 67 columns (1 country + 54 reduced-industry + 12 style), recovering 68 factor returns per transition with the 55th industry return implied by the constraint.
 
 For data-availability gaps relative to USE4 embedded in any of these steps, see [`data/README.md`](../data/README.md#limitations-relative-to-use4).

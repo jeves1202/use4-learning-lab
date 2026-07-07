@@ -116,7 +116,7 @@ A risk model answers one practical question: how much will this portfolio's valu
 \end{abstract}
 
 \begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
-\textbf{How to read these notes.} Read this document top to bottom as a tour of one pipeline. Section~\ref{sec:goal} states the single identity that the whole model serves; Sections~\ref{sec:data}--\ref{sec:specific} walk the assembly line left to right (data, exposures $\Xmat$, the regression that yields factor returns $\fvec$ and specific returns $u$, the factor covariance $\Fmat$, and the specific diagonal $\Del$); Section~\ref{sec:decomp} composes them back into portfolio risk and attribution; Section~\ref{sec:caveat} recaps the line and gives a caveat. The numbers labelled as measured come from a single run of our personal build. Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
+\textbf{How to read these notes.} Read this document top to bottom as a tour of one pipeline. Section~\ref{sec:goal} states the single identity that the whole model serves; Sections~\ref{sec:data}--\ref{sec:specific} walk the assembly line left to right (data, exposures $\Xmat$, the regression that yields factor returns $\fvec$ and specific returns $u$, the factor covariance $\Fmat$, and the specific diagonal $\Del$); Section~\ref{sec:decomp} composes them back into portfolio risk and attribution; Section~\ref{sec:caveat} recaps the line and gives a caveat. The numbers labelled as measured come from a single run of our personal build. Four colored boxes reoccur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
 
 \smallskip
 \textbf{Reference material.}
@@ -233,7 +233,7 @@ $\wvec$ & portfolio weight vector; ``the market'' is the ESTU cap-weighted $\wve
 $\sigma^2_p$ & portfolio volatility \\
 $N$ & number of assets ($\approx 2{,}500$) \\
 $K$ & number of factors ($=68$: country $+$ 55 industries $+$ 12 styles) \\
-$m_{i,t}$ & total market capitalisation of stock $i$ at date $t$ \\
+$m_{i,t}$ & total market capitalization of stock $i$ at date $t$ \\
 $W$ & WLS weight matrix, $\diag(\sqrt{m_{i,t}})$ \\
 $R^2$ & per-period cross-sectional coefficient of determination \\
 $\Var,\Cov,\Corr$ & variance, covariance, correlation \\
@@ -273,7 +273,7 @@ A descriptor uses trailing-twelve-month earnings. Explain why aligning it to the
   \item Explain the standardisation convention and why it makes the cap-weighted market style-neutral.
 \end{itemize}
 
-\paragraph{The estimation universe.} Before any factor can be measured, the model fixes a coherent set of stocks---the \emph{estimation universe} (ESTU), a first-principles proxy for the MSCI USA IMI, targeting about 99\% of US float market capitalisation, roughly $2{,}500$ names. The ESTU is load-bearing far beyond ``which stocks to include'': it is the sample over which descriptors are standardised (so it fixes the standardisation moments), it is the benchmark whose cap weights define ``the market,'' and it is the regression sample each period. Its construction uses a low-hundreds-of-millions-of-dollars size floor, a fixed top-$N$ target (a few thousand names), an asymmetric rank buffer to damp turnover, and a minimum-populated-window rule for adequate history.
+\paragraph{The estimation universe.} Before any factor can be measured, the model fixes a coherent set of stocks---the \emph{estimation universe} (ESTU), a first-principles proxy for the MSCI USA IMI, targeting about 99\% of US float market capitalization, roughly $2{,}500$ names. The ESTU is load-bearing far beyond ``which stocks to include'': it is the sample over which descriptors are standardised (so it fixes the standardisation moments), it is the benchmark whose cap weights define ``the market,'' and it is the regression sample each period. Its construction uses a low-hundreds-of-millions-of-dollars size floor, a fixed top-$N$ target (a few thousand names), an asymmetric rank buffer to damp turnover, and a minimum-populated-window rule for adequate history.
 
 \paragraph{The exposure matrix.} With the universe fixed, $\Xmat$ is assembled from three blocks, $68$ columns in all:
 \begin{itemize}[leftmargin=1.4em,nosep]

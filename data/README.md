@@ -513,6 +513,27 @@ Quick reference for which fields feed which USE4-style factors.
 
 ---
 
+## Model deliverables (`data/out/`)
+
+What the pipeline produces, by producing notebook. All parquet, `compression="zstd"`, `statistics=True`. Full schemas live in each step's spec and audit.
+
+| Artifact | Built by | Contents |
+|---|---|---|
+| `estu_monthly.parquet` | `estu_build.ipynb` | Monthly estimation-universe membership + mcap |
+| `daily_returns.parquet` | `daily_build.ipynb` (01.5) | Shared daily panel: excess log returns, lagged mcap, ESTU benchmark |
+| `estu_mkt.parquet`, `crsp_mkt.parquet`, `ticker_permaticker.parquet` | `daily_build.ipynb` (01.5) | Daily benchmarks + ticker→permaticker map |
+| `<slug>_use4.parquet` × 12 | each style `<slug>_build.ipynb` | Raw descriptor + standardized `<slug>_score` per (permaticker, signal_date) |
+| `industries_use4.parquet`, `industry_weights_use4.parquet` | `industries_build.ipynb` | Industry membership + per-date cap-weight vector for the constraint |
+| `country_use4.parquet` | `country_build.ipynb` | The anchor: unit country exposure + normalized √mcap `w_reg` |
+| `csr_validation_returns.parquet` | `country_build.ipynb` | Validation CSR factor returns (proving run; retired once 05 reconciles) |
+| `csr_factor_returns.parquet`, `csr_specific_returns.parquet` | `csr_build.ipynb` | Monthly factor returns; specific returns incl. non-ESTU extension |
+| `csr_factor_returns_daily.parquet`, `csr_specific_returns_daily.parquet` | `daily_csr_build.ipynb` | Daily factor returns + daily ESTU residuals — Layer 0 for 06/07 |
+| `fcov_factor_cov.parquet`, `fcov_factor_cov_preeig.parquet`, `fcov_predicted_vol.parquet` | `fcov_build.ipynb` | 68×68 covariance forecasts (final + pre-eigenfactor) and predicted vols per month-end |
+| `specific_risk.parquet` | `specific_risk_build.ipynb` | Per-stock monthly specific vol (`sigma_spec`) with all intermediate layers |
+| `asset_total_risk.parquet`, `portfolio_risk_decomp.parquet` | `risk_decomp_build.ipynb` | Per-asset total risk; per-portfolio decomposition and attribution |
+
+---
+
 ## Limitations relative to USE4
 
 Sharadar is a reported-financials database with no analyst estimates, no float share counts, and no licensed taxonomy data. Six structural gaps relative to the Barra USE4 spec cannot be resolved from this source alone.

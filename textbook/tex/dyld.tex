@@ -112,13 +112,13 @@
 \thispagestyle{empty}
 
 \begin{abstract}
-Dividend Yield (DYLD) is the income axis of a USE4-style style model: the trailing cash dividends a firm has paid per share, expressed per dollar of price. Economically it asks how much income a shareholder is paid for each dollar invested, given the firm's recent payout policy, and high-yield names -- REITs, utilities, mature payers -- co-move as a recognisable cohort. The descriptor itself is simple, but its cross-section is not a smooth bell: a large share of firms pay nothing, so the distribution has a big point mass at exactly zero plus a right-skewed tail of payers. This set treats that zero as real information -- ``this firm pays no dividend'' -- rather than as a missing value, and it shows how the trailing dividend is built point-in-time by summing the four most recent quarterly per-share filings. We close with the honest limitation: DYLD sees dividends only, not buybacks.
+Dividend Yield (DYLD) is the income axis of a USE4-style style model: the trailing cash dividends a firm has paid per share, expressed per dollar of price. Economically it asks how much income a shareholder is paid for each dollar invested, given the firm's recent payout policy, and high-yield names -- REITs, utilities, mature payers -- co-move as a recognizable cohort. The descriptor itself is simple, but its cross-section is not a smooth bell: a large share of firms pay nothing, so the distribution has a big point mass at exactly zero plus a right-skewed tail of payers. This set treats that zero as real information -- ``this firm pays no dividend'' -- rather than as a missing value, and it shows how the trailing dividend is built point-in-time by summing the four most recent quarterly per-share filings. We close with the honest limitation: DYLD sees dividends only, not buybacks.
 \end{abstract}
 
 \begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
-\textbf{How to read these notes.} We move from economics to construction: what the dividend-yield effect is (\S\ref{sec:what}), how USE4 defines the descriptor (\S\ref{sec:def}), how we build the trailing dividend and form the ratio (\S\ref{sec:compute}), why the zero-payer mass is the load-bearing feature of the cross-section (\S\ref{sec:zeros}), how we trim and standardise (\S\ref{sec:std}), and a one-page recap with one caveat (\S\ref{sec:summary}). The numbers labelled as measured come from a single run of our personal build.
+\textbf{How to read these notes.} We move from economics to construction: what the dividend-yield effect is (\S\ref{sec:what}), how USE4 defines the descriptor (\S\ref{sec:def}), how we build the trailing dividend and form the ratio (\S\ref{sec:compute}), why the zero-payer mass is the load-bearing feature of the cross-section (\S\ref{sec:zeros}), how we trim and standardize (\S\ref{sec:std}), and a one-page recap with one caveat (\S\ref{sec:summary}). The numbers labelled as measured come from a single run of our personal build.
 
-Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
+Four colored boxes reoccur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
 
 \textbf{Reference material.}
 \begin{itemize}[leftmargin=1.4em,topsep=2pt]
@@ -147,7 +147,7 @@ Think of DYLD as the answer to a shareholder's question: ``How much cash income 
 \end{intuition}
 
 \begin{keyresult}
-The DYLD exposure is the standardised ratio of trailing-twelve-month dividends per share to price per share -- a cash-income yield, placed on a common cross-sectional scale.
+The DYLD exposure is the standardized ratio of trailing-twelve-month dividends per share to price per share -- a cash-income yield, placed on a common cross-sectional scale.
 \end{keyresult}
 
 \begin{exercise}
@@ -167,9 +167,9 @@ $d_{i,q}$ & per-share dividend from the $q$-th most recent quarterly filing \\
 $s_{i,q}$ & cumulative split factor putting the $q$-th filing's per-share figure on the current basis \\
 $P_{i,t}$ & point-in-time price per share \\
 $y_{i,t}$ & raw dividend yield, $D_{i,t}/P_{i,t}$ \\
-$x_{i,t}$ & standardised DYLD exposure \\
+$x_{i,t}$ & standardized DYLD exposure \\
 $\mu_t,\ \sigma_t$ & cap-weighted mean and equal-weighted std of $y$ over the ESTU at date $t$ \\
-$w_i$ & cap weight of stock $i$ (used for the standardisation mean) \\
+$w_i$ & cap weight of stock $i$ (used for the standardization mean) \\
 PIT & point-in-time: data aligned by filing (datekey) date, no look-ahead \\
 ESTU & estimation universe (MSCI USA IMI proxy) \\
 \bottomrule
@@ -181,12 +181,12 @@ ESTU & estimation universe (MSCI USA IMI proxy) \\
 \paragraph{Learning objectives.}
 \begin{itemize}[leftmargin=1.4em,topsep=2pt]
   \item Recall the single descriptor behind DYLD and its weight.
-  \item State the standardisation convention the model applies to it.
+  \item State the standardization convention the model applies to it.
 \end{itemize}
 
 The USE4 specification is brisk here. Dividend Yield is a one-descriptor factor: the descriptor is trailing-twelve-month dividends per share divided by price, carried at descriptor weight $1.0$ (Menchero, Orr \& Wang 2011, Empirical Notes, App. A). There is no blend of sub-signals to weight; the modelling content is entirely in how the trailing dividend is constructed and how the ratio is cleaned and scaled.
 
-The descriptor is then standardised over the ESTU to cap-weighted mean $0$ and equal-weighted standard deviation $1$ (Methodology Notes, Sec. 2.3), with outliers trimmed at three standard deviations (Sec. 2.2). Writing the centring and scaling explicitly,
+The descriptor is then standardized over the ESTU to cap-weighted mean $0$ and equal-weighted standard deviation $1$ (Methodology Notes, Sec. 2.3), with outliers trimmed at three standard deviations (Sec. 2.2). Writing the centring and scaling explicitly,
 \[
 x_{i,t} \;=\; \frac{y_{i,t}-\mu_t}{\sigma_t}, \qquad
 \mu_t \;=\; \frac{\sum_i w_i\, y_{i,t}}{\sum_i w_i}, \qquad
@@ -253,7 +253,7 @@ In the personal build run, roughly $48\%$ of the ESTU pay no dividend (Figure~\r
 The modelling judgment is this: a non-payer's yield is genuinely zero. ``This firm returns no cash as dividends'' is real, decision-relevant information, not a gap in the data. The build therefore \emph{retains} zeros as valid exposures and does not drop non-payers.
 
 \begin{keyresult}
-A zero dividend yield is information, not a missing value. Non-payers carry a true exposure of zero and stay in the cross-section; they are standardised along with everyone else.
+A zero dividend yield is information, not a missing value. Non-payers carry a true exposure of zero and stay in the cross-section; they are standardized along with everyone else.
 \end{keyresult}
 
 \begin{pitfall}
@@ -265,22 +265,22 @@ Read DYLD as a switch times a magnitude: a binary \emph{pays / does not pay}, mu
 \end{intuition}
 
 \begin{exercise}
-Suppose you (wrongly) drop every non-payer and standardise DYLD on payers only. Describe qualitatively what happens to the cap-weighted mean exposure of an income-tilted portfolio versus a growth-tilted one, and explain why the factor no longer spans the market. (Hint: which firms are you deleting, and where do they sit in the cross-section?)
+Suppose you (wrongly) drop every non-payer and standardize DYLD on payers only. Describe qualitatively what happens to the cap-weighted mean exposure of an income-tilted portfolio versus a growth-tilted one, and explain why the factor no longer spans the market. (Hint: which firms are you deleting, and where do they sit in the cross-section?)
 \end{exercise}
 
-\section{Trim and standardisation}\label{sec:std}
+\section{Trim and standardization}\label{sec:std}
 
 \paragraph{Learning objectives.}
 \begin{itemize}[leftmargin=1.4em,topsep=2pt]
   \item Explain why only the upper tail of DYLD binds under a three-sigma trim.
-  \item Describe what the zero mass becomes after standardisation.
+  \item Describe what the zero mass becomes after standardization.
   \item Read the stability and quintile diagnostics from the build run.
 \end{itemize}
 
-With the raw yields in hand we apply the standard three-sigma trim. Because yields are non-negative and the mass piles up at zero, only the \emph{upper} tail really binds: the trim clips the extreme high-yield names -- distressed or very-high-payout REITs and MLPs -- and leaves the lower end untouched. We then standardise to cap-weighted mean $0$ and equal-weighted standard deviation $1$ over the ESTU. After standardisation the non-payer mass collapses onto a single standardised value (a spike just below the mean, since zero is below the cap-weighted average yield), and the payers spread out to the right. The distribution stays right-skewed.
+With the raw yields in hand we apply the standard three-sigma trim. Because yields are non-negative and the mass piles up at zero, only the \emph{upper} tail really binds: the trim clips the extreme high-yield names -- distressed or very-high-payout REITs and MLPs -- and leaves the lower end untouched. We then standardize to cap-weighted mean $0$ and equal-weighted standard deviation $1$ over the ESTU. After standardization the non-payer mass collapses onto a single standardized value (a spike just below the mean, since zero is below the cap-weighted average yield), and the payers spread out to the right. The distribution stays right-skewed.
 
 \begin{observed}
-In the build run the trim clips $\approx 1.7\%$ of ESTU rows (the upper tail, as expected). The payer sub-sample post-trim has mean $\approx 0.015$, standard deviation $\approx 0.023$, and skew $\approx 2.0$. After standardisation the cap-weighted mean is $0$ to machine precision and the equal-weighted standard deviation is $1.0$, with $\approx 97\%$ of ESTU rows inside $[\pm 3]$. Month-over-month Spearman $\rho \approx 0.993$: dividend policy is sticky, so DYLD is among the most stable styles. Quintile mean yields are monotone -- the bottom two quintiles sit at $0$ (the non-payer mass), then $\approx 0.004$, $\approx 0.017$, rising to $\approx 0.056$ in the top quintile.
+In the build run the trim clips $\approx 1.7\%$ of ESTU rows (the upper tail, as expected). The payer sub-sample post-trim has mean $\approx 0.015$, standard deviation $\approx 0.023$, and skew $\approx 2.0$. After standardization the cap-weighted mean is $0$ to machine precision and the equal-weighted standard deviation is $1.0$, with $\approx 97\%$ of ESTU rows inside $[\pm 3]$. Month-over-month Spearman $\rho \approx 0.993$: dividend policy is sticky, so DYLD is among the most stable styles. Quintile mean yields are monotone -- the bottom two quintiles sit at $0$ (the non-payer mass), then $\approx 0.004$, $\approx 0.017$, rising to $\approx 0.056$ in the top quintile.
 \end{observed}
 
 \begin{remark}
@@ -303,7 +303,7 @@ DYLD shows month-over-month $\rho \approx 0.993$, far higher than a trailing-ret
   \item State the structural limitation of a dividends-only yield and the lever that fixes it.
 \end{itemize}
 
-The pipeline, end to end: build the trailing dividend per share (four most recent quarterly filings, split-adjusted, point-in-time) $\div$ point-in-time price $\to$ keep non-payer zeros as real exposures $\to$ three-sigma trim (upper tail) $\to$ standardise to cap-weighted mean $0$ / equal-weighted standard deviation $1$. The result is a sticky ($\rho \approx 0.993$), right-skewed ($\text{skew} \approx 2$) income axis whose dominant cross-sectional feature is a large point mass at zero. The shipped deliverable is $\approx 1.6$M rows across $330$ dates and $\approx 15.7$k tickers.
+The pipeline, end to end: build the trailing dividend per share (four most recent quarterly filings, split-adjusted, point-in-time) $\div$ point-in-time price $\to$ keep non-payer zeros as real exposures $\to$ three-sigma trim (upper tail) $\to$ standardize to cap-weighted mean $0$ / equal-weighted standard deviation $1$. The result is a sticky ($\rho \approx 0.993$), right-skewed ($\text{skew} \approx 2$) income axis whose dominant cross-sectional feature is a large point mass at zero. The shipped deliverable is $\approx 1.6$M rows across $330$ dates and $\approx 15.7$k tickers.
 
 \begin{pitfall}
 \textbf{The caveat.} DYLD sees \emph{dividends only}, not buybacks. A firm that returns all of its cash through share repurchases reads as zero-yield, indistinguishable from a firm that returns nothing at all. DYLD therefore understates total shareholder payout and mislabels buyback-heavy names as ``no income''. It is also backward-looking: the trailing construction means a just-cut or just-initiated dividend shows up with a lag. The natural lever is a total-payout measure -- dividends plus net buybacks -- which restores the names that return cash by repurchasing shares.

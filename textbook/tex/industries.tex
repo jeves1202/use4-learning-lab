@@ -112,7 +112,7 @@
 \thispagestyle{empty}
 
 \begin{abstract}
-The industry factors are the membership layer of the model: one factor for each industry, with a stock's exposure being simply whether it belongs to that industry. Where the style factors are continuous, standardised scores, industry exposures are binary -- a stock carries a $1$ in its own industry's column and a $0$ in every other. The economic content is the most intuitive in the model: firms in the same industry rise and fall together, sharing exposure to the same input costs, customers, regulation, and cycle, and the industry factor's return is exactly that common move. USE4 specifies around sixty industry factors built on a licensed GICS classification, with diversified firms split fractionally across industries using business-segment data. Our build has neither GICS nor segment data, so it groups Sharadar's raw industry labels into a smaller scheme of \textbf{55 factors} and gives every stock a single, whole membership. Two features set this layer apart from the styles: the exposures are dummies, so there is no trimming or standardisation to do, and the factors carry an identification constraint -- their cap-weighted returns sum to zero -- that ties them to the country factor and is essential to making the whole model estimable.
+The industry factors are the membership layer of the model: one factor for each industry, with a stock's exposure being simply whether it belongs to that industry. Where the style factors are continuous, standardized scores, industry exposures are binary -- a stock carries a $1$ in its own industry's column and a $0$ in every other. The economic content is the most intuitive in the model: firms in the same industry rise and fall together, sharing exposure to the same input costs, customers, regulation, and cycle, and the industry factor's return is exactly that common move. USE4 specifies around sixty industry factors built on a licensed GICS classification, with diversified firms split fractionally across industries using business-segment data. Our build has neither GICS nor segment data, so it groups Sharadar's raw industry labels into a smaller scheme of \textbf{55 factors} and gives every stock a single, whole membership. Two features set this layer apart from the styles: the exposures are dummies, so there is no trimming or standardization to do, and the factors carry an identification constraint -- their cap-weighted returns sum to zero -- that ties them to the country factor and is essential to making the whole model estimable.
 \end{abstract}
 
 \begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
@@ -142,14 +142,14 @@ Four colored boxes reoccur: \textcolor{crimson}{\textbf{Intuition}} gives the me
 
 Industry membership is the most concrete source of common movement in the market. Two banks face the same yield curve and the same credit cycle; two oil producers ride the same crude price; two chipmakers share a supply chain and a demand wave. Whatever happens to an industry happens, to a first approximation, to all of its members at once. That shared fate is a risk a model must capture before any subtler style tilt, and the industry factors capture it directly: one factor per industry, whose return is the common move shared by the stocks in it.
 
-What makes this layer different from the styles is the shape of the exposure. A style exposure is a continuous, standardised number -- how cheap, how volatile, how large a stock is, measured on a common scale. An industry exposure is a plain yes-or-no: a stock either belongs to an industry or it does not. So the exposure is binary -- a $1$ in the stock's own industry and a $0$ everywhere else -- and there is nothing to centre, scale, or trim. Membership is the measurement.
+What makes this layer different from the styles is the shape of the exposure. A style exposure is a continuous, standardized number -- how cheap, how volatile, how large a stock is, measured on a common scale. An industry exposure is a plain yes-or-no: a stock either belongs to an industry or it does not. So the exposure is binary -- a $1$ in the stock's own industry and a $0$ everywhere else -- and there is nothing to centre, scale, or trim. Membership is the measurement.
 
 \begin{intuition}
 Think of the industry layer as a set of club memberships. Every stock holds a membership card for exactly one industry; that card is its exposure, worth $1$ for its own club and $0$ for all the others. When the regression later asks ``what did each industry do this month?'', it is simply reading the average return common to each club's members. The styles ask \emph{how much} of a trait a stock has; the industries ask only \emph{which club} it is in.
 \end{intuition}
 
 \begin{keyresult}
-The industry layer is a block of binary membership indicators in the exposure matrix: each stock loads $1$ on its own industry and $0$ on the rest. There are no continuous scores here, so no standardisation -- the entire design is the classification.
+The industry layer is a block of binary membership indicators in the exposure matrix: each stock loads $1$ on its own industry and $0$ on the rest. There are no continuous scores here, so no standardization -- the entire design is the classification.
 \end{keyresult}
 
 \section*{Notation}
@@ -184,7 +184,7 @@ The industry returns are not left free. They obey an identification constraint: 
 \[
 \sum_{j} w_j\, f^{\text{ind}}_j \;=\; 0 .
 \]
-This works because the cap‑share weights are positive while the factor returns (for industries or any factor) can be positive or negative, and, for industries, their cap‑weighted average is constrained to zero; for style factors, an analogous zero‑mean condition is applied to the standardized factor scores rather than directly to the returns. This constraint is what lets the industries coexist with a separate country factor, and Section~\ref{sec:constraint} is devoted to why. Crucially, the industry layer is a set of dummies, so the USE4 standardisation machinery -- the three-sigma trim, the cap-weighted-mean-zero scaling -- simply does not apply to it. There is no descriptor to standardise; the exposure is the membership.
+This works because the cap‑share weights are positive while the factor returns (for industries or any factor) can be positive or negative, and, for industries, their cap‑weighted average is constrained to zero; for style factors, an analogous zero‑mean condition is applied to the standardized factor scores rather than directly to the returns. This constraint is what lets the industries coexist with a separate country factor, and Section~\ref{sec:constraint} is devoted to why. Crucially, the industry layer is a set of dummies, so the USE4 standardization machinery -- the three-sigma trim, the cap-weighted-mean-zero scaling -- simply does not apply to it. There is no descriptor to standardize; the exposure is the membership.
 
 \section{How we build it without a licensed classification}\label{sec:build}
 
@@ -230,16 +230,16 @@ The industry factors are collinear with the country factor because every stock i
 
 \paragraph{Learning objectives.}
 \begin{itemize}[leftmargin=1.4em,topsep=2pt]
-  \item Describe the membership panel and why no standardisation diagnostics appear.
+  \item Describe the membership panel and why no standardization diagnostics appear.
   \item Read the divergence between an industry's cap weight and its head count.
 \end{itemize}
 
 Because the exposures are dummies, the diagnostics that dominate a style factor -- clip rates, skew, kurtosis, the fraction within three standard deviations -- have no meaning here. What characterises the layer instead is its coverage and its balance: every one of the $55$ factors is populated on every date, essentially every stock is classified (the catch-all fallback holds at most one in-universe name on a date), and no single industry is allowed to dominate -- the largest industry's share of market cap stays around one-seventh.
 
-The one genuinely informative cross-sectional picture is how an industry's \emph{cap weight} relates to its \emph{head count}, and the two diverge sharply (Figure~\ref{fig:industries_dist}). A handful of factors carry a large share of market capitalisation with relatively few member names -- industries dominated by a small number of very large firms. Others are populous, holding many names, yet command only a modest share of cap because their members are individually small. The cap weight, not the head count, is what enters the identification constraint, so a factor with few names can still pull hard on the model.
+The one genuinely informative cross-sectional picture is how an industry's \emph{cap weight} relates to its \emph{head count}, and the two diverge sharply (Figure~\ref{fig:industries_dist}). A handful of factors carry a large share of market capitalization with relatively few member names -- industries dominated by a small number of very large firms. Others are populous, holding many names, yet command only a modest share of cap because their members are individually small. The cap weight, not the head count, is what enters the identification constraint, so a factor with few names can still pull hard on the model.
 
 \begin{observed}
-On the build run the industry layer is a $0/1$ membership panel of $\approx 1.77$M stock-month rows over $330$ dates and $\approx 16{,}800$ tickers, with $55$ factors present on every date and at most one in-ESTU stock unclassified on any date. There is no trim and no standardisation -- the exposures are dummies. The per-date cap-weight vector sums to one across the $55$ factors, and the single largest industry never exceeds $\approx 14\%$ of in-ESTU cap. Cap weight and head count are only loosely related (Figure~\ref{fig:industries_dist}): the most cap-heavy factors are not the most populous, and vice versa.
+On the build run the industry layer is a $0/1$ membership panel of $\approx 1.77$M stock-month rows over $330$ dates and $\approx 16{,}800$ tickers, with $55$ factors present on every date and at most one in-ESTU stock unclassified on any date. There is no trim and no standardization -- the exposures are dummies. The per-date cap-weight vector sums to one across the $55$ factors, and the single largest industry never exceeds $\approx 14\%$ of in-ESTU cap. Cap weight and head count are only loosely related (Figure~\ref{fig:industries_dist}): the most cap-heavy factors are not the most populous, and vice versa.
 \end{observed}
 
 \begin{figure}[htbp]
@@ -257,10 +257,10 @@ On the build run the industry layer is a $0/1$ membership panel of $\approx 1.77
   \item State the central limitation and what would address it.
 \end{itemize}
 
-The build, end to end: group Sharadar's raw industry labels into a scheme of $55$ industry factors; assign every stock a single, whole membership, so its industry exposure is a $1$ in one column and $0$ in the rest; build the per-date cap-weight vector that the identification constraint will use; and hand the membership panel and the weights downstream, where the cross-sectional regression recovers the industry returns subject to $\sum_j w_j f^{\text{ind}}_j = 0$. There is no trimming or standardising, because the exposures are dummies, not descriptors.
+The build, end to end: group Sharadar's raw industry labels into a scheme of $55$ industry factors; assign every stock a single, whole membership, so its industry exposure is a $1$ in one column and $0$ in the rest; build the per-date cap-weight vector that the identification constraint will use; and hand the membership panel and the weights downstream, where the cross-sectional regression recovers the industry returns subject to $\sum_j w_j f^{\text{ind}}_j = 0$. There is no trimming or standardizing, because the exposures are dummies, not descriptors.
 
 \begin{keyresult}
-Industries are the model's membership layer: binary exposures, no standardisation, and an identification constraint that lets them sit alongside the country factor. The two computations that matter are the classification itself and the cap-weight vector the constraint runs on.
+Industries are the model's membership layer: binary exposures, no standardization, and an identification constraint that lets them sit alongside the country factor. The two computations that matter are the classification itself and the cap-weight vector the constraint runs on.
 \end{keyresult}
 
 \begin{pitfall}

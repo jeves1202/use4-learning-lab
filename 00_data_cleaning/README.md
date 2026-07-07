@@ -4,7 +4,8 @@
 
 ## What this step will cover
 
-Every downstream step reads from `data/cleaned/` rather than the raw CSVs in
+Every downstream step — from the ESTU all the way to the risk decomposition in
+`08_risk_decomp` — reads from `data/cleaned/` rather than the raw CSVs in
 `data/raw/`. The cleaning pipeline is the one-time translation layer between
 what Sharadar ships and what the rest of the repo expects:
 

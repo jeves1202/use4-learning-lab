@@ -1,6 +1,6 @@
-﻿# USE4-Style Factor Construction with Sharadar
+# USE4-Style Factor Risk Model with Sharadar
 
-An educational, from-scratch reconstruction of a **USE4-style US equity factor model** built from a Sharadar SF1 subscription (~$49/month via Nasdaq Data Link), Fama–French factors (free), and the published MSCI Barra USE4 methodology and empirical notes.
+An educational, from-scratch reconstruction of a **USE4-style US equity factor risk model** — from raw vendor CSVs all the way to a factor covariance matrix, specific-risk forecasts, and portfolio risk decomposition — built from a Sharadar SF1 subscription (~$49/month via Nasdaq Data Link), Fama–French factors (free), and the published MSCI Barra USE4 methodology and empirical notes.
 
 It is meant for hopeful quants who want something serious and technical on their GitHub, and who are willing to grind through the messy bits: data cleaning, point-in-time issues, debugging, and constantly asking whether the numbers make sense.
 
@@ -8,22 +8,34 @@ It is meant for hopeful quants who want something serious and technical on their
 
 ---
 
-## How to start
+## How this repo works
 
-Read the **READMEs** all the way through and take notes. Refer back to them consistently. They are intentionally concise, but filled with valuable information. Understanding what you're getting yourself into before you start will likely be the single most helpful thing you can do for yourself in this repo.
+Each numbered step ships two files and withholds a third:
+
+- **`*_spec.ipynb`** — a markdown-only spec: USE4 quotes, every judgment call the PDFs don't settle (with a chosen default), validation targets, and known pitfalls. This is your build target.
+- **`*_audit.md`** — the reference audit: what correct output looked like on our run, down to row counts and check outcomes.
+- **`*_build.ipynb`** — deliberately **not provided**. Writing it is the point. The spec tells you what to build and why; the audit tells you whether you built it.
+
+Read the READMEs all the way through before you start and refer back to them. They are intentionally concise but dense — understanding what you're getting into is the single most helpful thing you can do for yourself here.
 
 ---
 
 ## What you'll build
 
-By working through this repo, you'll end up with:
+Working front to back, you end up with a complete risk model:
 
-- **A USE4-like estimation universe (ESTU)** for US equities, built from Sharadar data and designed to approximate a broad, investable, liquid universe similar in spirit to MSCI USA IMI.
-- **A set of style factors** constructed as close as is reasonable to USE4 definitions given public data: Beta, Size, Momentum, Earnings Yield, Dividend Yield, Residual Volatility, Growth, Book-to-Price, Leverage, Liquidity, Non-linear Size, and Non-linear Beta.
-- **~60 GICS-like industry factors** — unit-exposure dummies (every stock gets 0 or 1 to its industry; there is no standardisation step, unlike the style factors). The key challenge is that Sharadar carries SIC codes, Fama–French classifications, and its own sector/industry fields but not GICS directly; building a defensible GICS-like mapping from those fields, and keeping it point-in-time as companies get reclassified, is the real work. Exposures are one-hot membership per (stock, signal date), with explicit rules for conglomerates and names with stale metadata. Industry dummies only matter inside the cross-sectional regression alongside your style exposures — build this after the 12 style factors.
-- **Per-factor audits** (in LaTeX) that compare each implementation against its intended economic meaning, check distributions, stability, and correlations, and run simple tests like quintile spreads to catch mistakes.
+- **An estimation universe (ESTU)** for US equities — broad, investable, liquid, similar in spirit to MSCI USA IMI.
+- **12 style factors** built as close to USE4 definitions as public data allows: Beta, Size, Momentum, Earnings Yield, Dividend Yield, Residual Volatility, Growth, Book-to-Price, Leverage, Liquidity, Non-linear Size, Non-linear Beta.
+- **~55 industry factors** — unit-exposure dummies you design yourself from Sharadar's ~150 classification atoms, since GICS isn't available. Keeping the scheme defensible and point-in-time is the real work.
+- **The country factor anchor** — the market intercept, plus the cap-weighted zero-sum industry constraint that identifies it.
+- **The cross-sectional regression (CSR)** — the engine that turns exposures into monthly factor returns and specific returns, then runs again per trading day to feed everything downstream.
+- **A factor covariance matrix** — EWMA volatilities and correlations, Newey–West correction, Monte-Carlo eigenfactor de-biasing, and a volatility-regime multiplier.
+- **Specific risk** — a five-layer per-stock idiosyncratic volatility model (time-series, structural, coverage blend, Bayesian shrinkage, regime multiplier).
+- **Portfolio risk decomposition** — σ²(portfolio) = wᵀXFXᵀw + wᵀΔw, with Euler attribution by factor group and active risk versus the cap-weighted market.
 
-If you're new to the space and the data, budget roughly **a month of focused work** to get through ESTU plus a few core factors at a solid level.
+Every step ends with an explicit PASS/FAIL validation battery, and every audit documents the reference numbers you're trying to reproduce in shape (not in vintage).
+
+If you're new to the space and the data, budget roughly **a month of focused work** to get through ESTU plus a few core factors at a solid level. The full risk model is a bigger commitment — but it's built one bounded step at a time.
 
 ---
 
@@ -37,7 +49,7 @@ If you're new to the space and the data, budget roughly **a month of focused wor
   - Any other tables you choose for liquidity, shares, etc.
 - **[Fama–French factor datasets](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/)** for market/benchmark excess returns where convenient (free, hosted by Dartmouth).
 
-You'll need to be comfortable reading the Sharadar schema docs and mapping fields to what the USE4 methodology expects (market cap, earnings, book value, sales, assets, dividends, and so on).
+You'll need to be comfortable reading the Sharadar schema docs and mapping fields to what the USE4 methodology expects (market cap, earnings, book value, sales, assets, dividends, and so on). `data/README.md` does most of this for you.
 
 ### Environment
 
@@ -45,97 +57,95 @@ You'll need to be comfortable reading the Sharadar schema docs and mapping field
 - **Package management:** [uv](https://github.com/astral-sh/uv)
 - **Core libraries:** `polars` for data wrangling, plus the usual numerical/scientific stack
 
-High-level setup:
-
 ```bash
 uv sync            # install dependencies
 uv run python ...  # run scripts, or open notebooks via your IDE
 ```
 
-Check the `pyproject.toml` / `uv` config in the repo for exact commands once you clone it.
-
-**Hardware.** This is designed to be doable on a reasonably modern laptop. Full-universe daily builds over decades of data will chug, so subset by date or use a smaller ESTU while you iterate.
+**Hardware.** Doable on a reasonably modern laptop. Full-universe daily builds over decades of data will chug, so subset by date or use a smaller ESTU while you iterate.
 
 ---
 
 ## Repo layout
 
-The repo is organized in **numbered steps** — do them in order.
+Numbered steps — do them in order.
 
 ```
-00_data_cleaning/             # STEP 0 — parse and clean raw Sharadar CSVs into parquet
-  cleaning_spec.ipynb         #   schema notes, column types, split/currency handling
-  cleaning_build.ipynb        #   <- YOU write this
-
-01_estu/                      # STEP 1 — the estimation universe (build this first)
-  estu_spec.ipynb             #   design and reasoning; your build target
-  estu_audit.tex              #   reference audit (our numbers, for comparison)
+00_data_cleaning/             # STEP 0 — raw Sharadar CSVs → cleaned parquet (planned)
+01_estu/                      # STEP 1 — the estimation universe
+  estu_spec.ipynb             #   the spec; your build target
+  estu_audit.md               #   reference audit (our numbers, for comparison)
   estu_build.ipynb            #   <- YOU write this
-
+01.5_daily/                   # STEP 1.5 — shared daily returns panel (build after Beta + BP)
 02_style_factors/             # STEP 2 — the 12 style factors
-  beta/                       #   e.g. beta/, size/, mom/, ...
-    beta_spec.ipynb           #   definition, USE4 references, forced deviations
-    beta_audit.tex            #   reference audit
+  beta/                       #   beta/, size/, mom/, ... one dir per factor
+    beta_spec.ipynb
+    beta_audit.md
     beta_build.ipynb          #   <- YOU write this
-  daily_panel/                #   the refactor step: shared returns panel you
-                              #   extract after your second time-series factor
-  ...
-
-03_industry_factors/          # STEP 3 — industry factor exposures (you design the scheme)
-04_country_factor/            # STEP 4 — the market intercept + constraint (shipped; runs last)
-
+  daily_panel/                #   the refactor module the 01.5 step formalizes
+03_industry_factors/          # STEP 3 — industry factors (you design the scheme)
+04_country_factor/            # STEP 4 — market intercept anchor + validation CSR
+05_csr/                       # STEP 5 — the cross-sectional regression
+  csr_spec.ipynb              #   monthly production CSR
+  daily_csr_spec.ipynb        #   daily sibling — Layer 0 for steps 06 and 07
+  csr_audit.md                #   reference audit (covers the monthly build only, for now)
+06_fcov/                      # STEP 6 — factor covariance forecast
+07_specific_risk/             # STEP 7 — specific (idiosyncratic) risk
+08_risk_decomp/               # STEP 8 — portfolio risk decomposition (runs last)
 common/                       # your shared utilities (you create this as you go)
 data/                         # not version-controlled; see data/README.md
-docs/                         # factor overview, usage, deviations register
+docs/                         # factor overview + usage conventions
+textbook/                     # LaTeX notes on the model, one chapter per stage, with PDFs
 ```
 
-Build notebooks are deliberately **not** provided — writing them is the point.
-The specs tell you what to build and why; the reference audits tell you what
-correct output looked like on our run.
-
-### Status — open to updates
+### Status
 
 | Step | Contents | Status |
 |---|---|---|
-| 00 Data cleaning | Sharadar CSV → parquet cleaning pipeline | planned — repo updates when built |
+| 00 Data cleaning | Sharadar CSV → parquet pipeline | planned — being built by Maxwell |
 | 01 ESTU | spec + reference audit | **shipped** |
-| 02 Style factors | 12 specs + reference audits + daily-panel refactor module | **shipped** |
+| 01.5 Daily panel | spec + reference audit | **shipped** |
+| 02 Style factors | 12 specs + reference audits | **shipped** |
 | 03 Industry factors | spec + reference audit (scheme design is yours) | **shipped** |
-| 04 Country factor | spec + reference audit (anchor + validation CSR — runs last) | **shipped** |
+| 04 Country factor | spec + reference audit (anchor + validation CSR) | **shipped** |
+| 05 CSR | monthly + daily specs; audit covers the monthly build for now | **shipped** |
+| 06 Factor covariance | spec + reference audit | **shipped** |
+| 07 Specific risk | spec + reference audit | **shipped** |
+| 08 Risk decomposition | spec + reference audit | **shipped** |
 
-Specs and audits ship from a living research pipeline; expect occasional
-refinements to thresholds and conventions as the later steps land.
+Specs and audits ship from a living research pipeline; expect occasional refinements to thresholds and conventions. The audits for steps 05–08 come from a slightly later data vintage than 01–04 (each audit states its own run date); the audits will be re-pinned to a single vintage before a full-ship release.
 
 ---
 
 ## How to proceed
 
-Start by reading, in order:
+Read first, in order: **this README** → **`docs/FACTOR_OVERVIEW.md`** (what every factor and stage is, and why) → **`data/README.md`** (schemas, field mapping, structural limitations vs USE4) → **`docs/USAGE.md`** (the per-step loop and conventions).
 
-1. **This README** — scope, data sources, repo layout, and build order.
-2. **`docs/FACTOR_OVERVIEW.md`** — what each of the 12 style factors, the industry scheme, and the country factor are and why they exist.
-3. **`data/README.md`** — the data schema, field mapping, and structural limitations relative to USE4 (analyst estimates, float mcap, preferred equity, GICS).
-4. **`docs/USAGE.md`** — conventions and utilities you'll use throughout.
+Then build:
 
-Then build in this order:
+1. **`00` — Data cleaning.** Raw CSVs → typed, partitioned parquet. Everything downstream reads from it.
+2. **`01` — ESTU.** The foundation. Don't build factors on a junk universe.
+3. **`02` — Size, Beta, BP.** One spot fundamental, one time-series factor, one point-in-time join — you touch every mechanic you'll need.
+4. **`01.5` — Daily returns panel.** By now you've written the price/return plumbing two or three times. Extract it once, then retrofit the earlier factors to read it.
+5. **`02` — remaining style factors** (EYLD, DYLD, LEV, LIQ, GRO, MOM, RESVOL, NLS, NLB). Order is flexible; respect `beta → {resvol, nlb}` and `size → nls`.
+6. **`03` — Industry factors.** You design the scheme; the spec explains the criteria.
+7. **`04` — Country factor.** The anchor (unit exposure + √mcap weights) plus a validation CSR that proves the whole system is well-posed.
+8. **`05` — The cross-sectional regression.** First the monthly production CSR (factor returns + specific returns), then the daily sibling — same engine run per trading day, with month-end exposures held fixed. The daily outputs are Layer 0 for both of the next two steps.
+9. **`06` — Factor covariance.** EWMA → Newey–West → eigenfactor → volatility regime, forecast at each month-end.
+10. **`07` — Specific risk.** Five layers from daily CSR residuals to a per-stock monthly σ. Consumes step 05's daily output directly — it does not depend on 06.
+11. **`08` — Risk decomposition.** Composes X, F, and Δ into portfolio risk and attribution. Runs last.
 
-5. **`00` — Data cleaning.** Parse raw Sharadar CSVs into parquet. Everything downstream depends on this.
-2. **`01` — ESTU.** The estimation universe is the foundation. Don't build factors on top of a junk universe.
-3. **`02` — Size, Beta, BP (first three style factors).** Size is conceptually simple and upstream of Non-linear Size. Beta introduces the time-series pattern (rolling regression on excess returns) you'll reuse for Momentum, Residual Volatility, NLB, and NLS. BP is the first fundamentals-based factor — it forces you to wrestle with point-in-time joins and how to handle negatives.
-4. **`01.5` — Daily returns panel.** By this point you've written the price-loading and return-computation logic two or three times. Extract it here so the remaining time-series factors load a single parquet instead of reimplementing the same pipeline. Build this after Beta and BP, not before. I suggest going back and importing these outputs into the previously built factors for ease of future pipeline.
-5. **`02` — Remaining style factors** (EYLD, DYLD, LEV, LIQ, GRO, MOM, RESVOL, NLS, NLB). Order within this group is flexible; the specs note any inter-factor dependencies.
-6. **`03` — Industry factors.** Unit-exposure dummies; you design the scheme that maps Sharadar's ~150 classification atoms to factors (targeting somewhat fewer than USE4's 60, for reasons the spec explains). Build after you have the style factors working so you understand the cross-sectional regression context these live in.
-7. **`04` — Country factor.** The market intercept with cap-weighted zero-sum industry constraint. Runs last because it depends on both the style and industry factor exposures.
+**A note on shared plumbing.** The risk-model stages (05–08) load the same exposure deliverables, the same daily panel, and the same month-owned return mapping over and over. The specs keep each build self-contained so every step stands on its own, but once you start step 05 it is very much worth extracting a small common library for the shared loads and kernels — it saves real compute and real debugging. That's what I did in my own build.
 
 ---
 
 ## Roadmap
 
-This repo starts with **ESTU and factor exposures** — the cross-sectional building blocks of a USE4-style model — and will grow to cover the full pipeline:
+The model is now specified end to end (ESTU → exposures → CSR → covariance → specific risk → decomposition). What remains:
 
-- Use these factor exposures to build a **factor covariance matrix** (something USE4-inspired but tractable on public data).
-- Layer on **specific-risk** approximations and simple portfolio risk forecasts.
-- Show how to plug this into **basic optimization** and risk attribution.
+- **Step 00** — the reference data-cleaning module (in progress).
+- **Audit refresh** — re-pinning all reference audits, including a daily-CSR audit, to a single data vintage at full-ship.
+- **Portfolio optimization** — putting the risk model to work in a basic optimizer, on top of step 08's decomposition machinery.
 
 ---
 

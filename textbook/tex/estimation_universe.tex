@@ -112,13 +112,13 @@
 \thispagestyle{empty}
 
 \begin{abstract}
-The \emph{estimation universe} (ESTU) is the set of stocks on which the USE4 model is estimated --- not the (far larger) coverage universe of stocks that ultimately receive exposures and risk forecasts. It is the most quietly load-bearing object in the whole pipeline: a single ESTU sets the standardisation moments for every descriptor, the market benchmark that Beta is measured against, the sample for the cross-sectional regression that backs out factor returns, and the sample for every orthogonalisation regression. Because all four share the same set, an error here does not produce one bug; it biases every factor in a \emph{correlated} way. The awkward fact is that USE4 specifies almost no numerics for the ESTU: it adopts the MSCI USA IMI and defers the actual construction to the proprietary MSCI GIMI methodology. Our organising principle, then, is to reproduce MSCI's three \emph{published} principles --- representation, liquidity, and stability --- as three transparent screens over observable Sharadar data. This set develops those three screens one at a time, shows what the real build measured, and names the one limitation (total- rather than float-adjusted market cap) it cannot yet close.
+The \emph{estimation universe} (ESTU) is the set of stocks on which the USE4 model is estimated --- not the (far larger) coverage universe of stocks that ultimately receive exposures and risk forecasts. It is the most quietly load-bearing object in the whole pipeline: a single ESTU sets the standardization moments for every descriptor, the market benchmark that Beta is measured against, the sample for the cross-sectional regression that backs out factor returns, and the sample for every orthogonalisation regression. Because all four share the same set, an error here does not produce one bug; it biases every factor in a \emph{correlated} way. The awkward fact is that USE4 specifies almost no numerics for the ESTU: it adopts the MSCI USA IMI and defers the actual construction to the proprietary MSCI GIMI methodology. Our organizing principle, then, is to reproduce MSCI's three \emph{published} principles --- representation, liquidity, and stability --- as three transparent screens over observable Sharadar data. This set develops those three screens one at a time, shows what the real build measured, and names the one limitation (total- rather than float-adjusted market cap) it cannot yet close.
 \end{abstract}
 
 \begin{tcolorbox}[colback=paperlt,colframe=ink!30,boxrule=0.4pt,arc=2pt,left=10pt,right=10pt,top=8pt,bottom=8pt]
 \textbf{How to read these notes.} The spine is simple: Section~\ref{sec:why} argues why the ESTU matters; Sections~\ref{sec:spec}--\ref{sec:gap} set up what USE4 specifies and the data gap; Sections~\ref{sec:rep}--\ref{sec:stab} build the three screens (representation, liquidity, stability), one concept per section, each independently readable; Sections~\ref{sec:run}--\ref{sec:summary} report the build and close with one caveat. The numbers labelled as measured come from a single run of our personal build.
 
-Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
+Four colored boxes reoccur: \textcolor{crimson}{\textbf{Intuition}} gives the mental picture, \textcolor{amber}{\textbf{Pitfall}} flags what breaks without the fix, \textcolor{steel}{\textbf{Takeaway}} states a load-bearing result, and \textcolor{teal}{\textbf{Measured}} reports real numbers from the build run.
 
 \textbf{Reference material.}
 \begin{itemize}[leftmargin=1.4em,topsep=2pt]
@@ -138,14 +138,14 @@ Four coloured boxes recur: \textcolor{crimson}{\textbf{Intuition}} gives the men
   \item Recall the three published MSCI principles that we will implement as three screens.
 \end{itemize}
 
-A risk model has two distinct universes, and conflating them is the most common conceptual error in this whole exercise. The \textbf{coverage universe} $U_t$ is every stock that receives an exposure vector and a risk forecast --- in practice tens of thousands of names. The \textbf{estimation universe} (ESTU) $E_t \subseteq U_t$ is the much smaller set actually \emph{used to estimate the model}: to compute the standardisation moments, to run the cross-sectional regression that backs out factor returns, and to fit the orthogonalisation regressions. A stock outside the ESTU still gets a forecast --- we apply the estimated factor structure to its exposures --- but it does not get a vote in \emph{estimating} that structure.
+A risk model has two distinct universes, and conflating them is the most common conceptual error in this whole exercise. The \textbf{coverage universe} $U_t$ is every stock that receives an exposure vector and a risk forecast --- in practice tens of thousands of names. The \textbf{estimation universe} (ESTU) $E_t \subseteq U_t$ is the much smaller set actually \emph{used to estimate the model}: to compute the standardization moments, to run the cross-sectional regression that backs out factor returns, and to fit the orthogonalisation regressions. A stock outside the ESTU still gets a forecast --- we apply the estimated factor structure to its exposures --- but it does not get a vote in \emph{estimating} that structure.
 
-Why restrict estimation at all? Because the regression that recovers factor returns is only as clean as its sample. Drag in thinly-traded micro-caps and you inject spurious return relationships (stale prices, mechanical mean reversion) that the regression will faithfully attribute to factors. Let membership churn month to month and the standardisation moments wobble, which jiggles every exposure, which inflates measured style volatility. The ESTU is the lever that controls all of this.
+Why restrict estimation at all? Because the regression that recovers factor returns is only as clean as its sample. Drag in thinly-traded micro-caps and you inject spurious return relationships (stale prices, mechanical mean reversion) that the regression will faithfully attribute to factors. Let membership churn month to month and the standardization moments wobble, which jiggles every exposure, which inflates measured style volatility. The ESTU is the lever that controls all of this.
 
 \begin{keyresult}
 The ESTU fixes \emph{four} things at once:
 \begin{enumerate}[nosep,leftmargin=1.6em]
-  \item the \textbf{standardisation moments} --- the cap-weighted mean and equal-weighted standard deviation used to $z$-score every descriptor;
+  \item the \textbf{standardization moments} --- the cap-weighted mean and equal-weighted standard deviation used to $z$-score every descriptor;
   \item the constituent set and weights of the cap-weighted \textbf{market benchmark} that Beta is measured against;
   \item the \textbf{sample for the cross-sectional WLS regression} (weights $\propto\sqrt{\text{mcap}}$) that backs out factor returns;
   \item the \textbf{sample for the orthogonalisation regressions} (e.g.\ non-linear size, non-linear beta, residual volatility).
@@ -176,7 +176,7 @@ Symbol & Meaning \\
 $t$ & a monthly signal date (rebalance date) \\
 $U_t$ & coverage universe: all stocks alive at $t$ \\
 $E_t$ & estimation universe (ESTU) at $t$, $E_t \subseteq U_t$ \\
-$m_{i,t}$ & total market capitalisation of stock $i$ at $t$ (USD) \\
+$m_{i,t}$ & total market capitalization of stock $i$ at $t$ (USD) \\
 $w_{i,t}$ & cap weight $m_{i,t}/\sum_{j\in E_t} m_{j,t}$ \\
 $d_{i,t}$ & daily dollar volume, $\text{closeunadj}\times\text{volume}$ \\
 $\widetilde d_{i,t}$ & trailing $\approx$63-day \emph{median} dollar volume (days $\le t$) \\
@@ -184,7 +184,7 @@ $\text{ATVR}_{i,t}$ & annualised traded value ratio (liquidity screen) \\
 $r_{i,t}$ & rank of $m_{i,t}$ among hard-filter- and retain-eligible names (1 = largest) \\
 $\mu_{\text{cw}}$ & cap-weighted mean of a descriptor over $E_t$ \\
 $\sigma_{\text{ew}}$ & equal-weighted std.\ of a descriptor over $E_t$ \\
-$x_i$ & a raw descriptor; $z_i=(x_i-\mu_{\text{cw}})/\sigma_{\text{ew}}$ its standardised form \\
+$x_i$ & a raw descriptor; $z_i=(x_i-\mu_{\text{cw}})/\sigma_{\text{ew}}$ its standardized form \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -198,7 +198,7 @@ $x_i$ & a raw descriptor; $z_i=(x_i-\mu_{\text{cw}})/\sigma_{\text{ew}}$ its sta
   \item Explain why cap-weighted centering makes a diversified cap-weighted portfolio style-neutral.
 \end{itemize}
 
-USE4 (\emph{Empirical Notes}, Sec.\ 3.1) treats ESTU selection as a critical modelling decision and asks for three qualities. The universe should be \textbf{broad} and representative (without dragging in illiquid names that inject spurious return relationships), \textbf{liquid} (so factor returns reflect real trading activity rather than thin-trading noise), and \textbf{stable} (so exposures and returns are not whipped around by frequent entry and exit). To get these, USE4 adopts the MSCI USA IMI, which targets $99\%$ of float-adjusted market capitalisation, and defers the actual construction --- thresholds, buffers, segmentation --- to the MSCI GIMI document.
+USE4 (\emph{Empirical Notes}, Sec.\ 3.1) treats ESTU selection as a critical modelling decision and asks for three qualities. The universe should be \textbf{broad} and representative (without dragging in illiquid names that inject spurious return relationships), \textbf{liquid} (so factor returns reflect real trading activity rather than thin-trading noise), and \textbf{stable} (so exposures and returns are not whipped around by frequent entry and exit). To get these, USE4 adopts the MSCI USA IMI, which targets $99\%$ of float-adjusted market capitalization, and defers the actual construction --- thresholds, buffers, segmentation --- to the MSCI GIMI document.
 
 How the ESTU is then \emph{used} pins down why it must be right. Factor returns are estimated by a cross-sectional weighted least squares regression (\emph{Methodology Notes}, Sec.\ 3.1). Stacking exposures into $\Xmat_t$ and observed excess returns into $r_t$ over $i\in E_t$, the estimator is
 \[
@@ -207,7 +207,7 @@ How the ESTU is then \emph{used} pins down why it must be right. Factor returns 
 \]
 The specific-return variance is assumed inversely proportional to $\sqrt{\text{total mcap}}$, so the variance-minimising (GLS) weights go as $\sqrt{m_{i,t}}$ --- large caps get more say, but only as the square root, so a handful of mega-caps cannot dominate. Crucially, \emph{only ESTU names enter this regression}; everything else receives exposures and forecasts but contributes nothing to estimating the factor returns themselves.
 
-Descriptors are standardised before they become exposures (\emph{Methodology Notes}, Sec.\ 2.3): a raw descriptor $x_i$ becomes
+Descriptors are standardized before they become exposures (\emph{Methodology Notes}, Sec.\ 2.3): a raw descriptor $x_i$ becomes
 \[
 z_i = \frac{x_i - \mu_{\text{cw}}}{\sigma_{\text{ew}}},
 \qquad
@@ -222,7 +222,7 @@ Why cap-weight the \emph{mean} but equal-weight the \emph{spread}? The cap-weigh
 \end{intuition}
 
 \begin{pitfall}
-The estimation universe is \emph{not} the holding or coverage universe. If you accidentally standardise descriptors over your full coverage universe --- or worse, over your live book --- you change $\mu_{\text{cw}}$ and $\sigma_{\text{ew}}$, and every exposure in the model silently shifts. ESTU in, ESTU out: the moments must come from the same set the factor returns are estimated on.
+The estimation universe is \emph{not} the holding or coverage universe. If you accidentally standardize descriptors over your full coverage universe --- or worse, over your live book --- you change $\mu_{\text{cw}}$ and $\sigma_{\text{ew}}$, and every exposure in the model silently shifts. ESTU in, ESTU out: the moments must come from the same set the factor returns are estimated on.
 \end{pitfall}
 
 \begin{exercise}
@@ -230,7 +230,7 @@ Show that if the specific-return variance is $\Var(u_i)=k/\sqrt{m_i}$ for a cons
 \end{exercise}
 
 \begin{exercise}
-Two analysts standardise the same descriptor over the ESTU. Analyst~A finds a cap-weighted mean of $0.4$; Analyst~B uses the equal-weighted mean, $-0.1$. Each then centres the descriptor on their own mean and forms the cap-weighted market portfolio. Compute the market portfolio's average exposure under each centering. Which analyst's market is exactly style-neutral, and why? \emph{(Hint: write the average exposure as $\sum_i w_i z_i$ with $w_i\propto m_i$ and substitute each definition of the mean.)}
+Two analysts standardize the same descriptor over the ESTU. Analyst~A finds a cap-weighted mean of $0.4$; Analyst~B uses the equal-weighted mean, $-0.1$. Each then centres the descriptor on their own mean and forms the cap-weighted market portfolio. Compute the market portfolio's average exposure under each centering. Which analyst's market is exactly style-neutral, and why? \emph{(Hint: write the average exposure as $\sum_i w_i z_i$ with $w_i\propto m_i$ and substitute each definition of the mean.)}
 \end{exercise}
 
 \section{The gap: USE4 defers to MSCI, and we have Sharadar}\label{sec:gap}
@@ -239,7 +239,7 @@ Two analysts standardise the same descriptor over the ESTU. Analyst~A finds a ca
 \begin{itemize}[nosep,leftmargin=1.4em]
   \item State precisely what USE4 leaves unspecified and what is proprietary in MSCI GIMI.
   \item List the observable Sharadar fields available to us and the one input we lack.
-  \item State the three-screen strategy that organises the rest of the notes.
+  \item State the three-screen strategy that organizes the rest of the notes.
 \end{itemize}
 
 Here is the gap. USE4 publishes \emph{no} numeric ESTU rules; it points to MSCI GIMI, and GIMI's exact thresholds, buffer widths, and segment cutoffs are proprietary. We also lack two MSCI inputs outright: float-adjusted market cap (Sharadar carries total mcap only) and the actual IMI membership lists. What we \emph{do} have, point-in-time, is Sharadar: total market cap, daily prices, daily volume, a security-category field (common stock vs.\ ETF/CEF/warrant), and exchange.
@@ -304,7 +304,7 @@ Latest-date funnel (personal build, signal date 2026-06-23; Figure~\ref{fig:funn
 \end{figure}
 
 \begin{remark}
-The post-2010 in-ESTU small-segment share ($73.4\%$) sits far above MSCI's $\approx 14\%$ because ours is measured \emph{by count} within our cap-target proxy while MSCI's is \emph{by float capitalisation}. Both can be true at once; they answer different questions. The labels are informational; the cap target governs membership.
+The post-2010 in-ESTU small-segment share ($73.4\%$) sits far above MSCI's $\approx 14\%$ because ours is measured \emph{by count} within our cap-target proxy while MSCI's is \emph{by float capitalization}. Both can be true at once; they answer different questions. The labels are informational; the cap target governs membership.
 \end{remark}
 
 \begin{exercise}
@@ -354,7 +354,7 @@ A stock trades $\$1$M/day for $62$ days, then prints a single $\$60$M block on a
 \begin{itemize}[nosep,leftmargin=1.4em]
   \item Explain hysteresis and why MSCI uses asymmetric size buffers ($\approx 1.8\times$ up, $1.0\times$ down).
   \item Describe our asymmetric rank-buffer proxy and the warm-start state it requires.
-  \item Connect membership churn to bouncing standardisation moments and inflated style volatility.
+  \item Connect membership churn to bouncing standardization moments and inflated style volatility.
 \end{itemize}
 
 MSCI engineers stability with \textbf{asymmetric size buffers}. To move \emph{up} a segment a name must clear a wider margin than it needs to fall \emph{out}: the published rule requires mcap above $\approx 1.8\times$ the cutoff to be promoted mid$\to$large, while only $< 1.0\times$ to be demoted large$\to$mid. The asymmetry is deliberate --- it is \emph{hysteresis}, a dead-band that prevents a name parked at the boundary from flipping segments on noise.
@@ -362,7 +362,7 @@ MSCI engineers stability with \textbf{asymmetric size buffers}. To move \emph{up
 Our proxy is an \textbf{asymmetric rank buffer} with a few-hundred-rank hysteresis band. A name \emph{enters} only if its rank $r_{i,t}$ is inside the cap target and it is otherwise eligible; a \emph{current member} is \emph{retained} until its rank slips well past the band. Entry is strict, exit is lenient --- enter tight, exit loose, the same add/retain asymmetry we used for liquidity, now in rank space.
 
 \begin{intuition}
-Why bother with a buffer at all? Without one, roughly $5$--$10\%$ of the ESTU turns over every month purely from names oscillating across the boundary --- not because anything real changed. That churn is corrosive: bouncing membership $\to$ bouncing standardisation moments $\to$ bouncing exposures $\to$ spuriously inflated style-factor volatility, plus a jumpy Beta benchmark. The buffer roughly halves turnover to $1$--$2\%$, buying a quieter, more honest model for free.
+Why bother with a buffer at all? Without one, roughly $5$--$10\%$ of the ESTU turns over every month purely from names oscillating across the boundary --- not because anything real changed. That churn is corrosive: bouncing membership $\to$ bouncing standardization moments $\to$ bouncing exposures $\to$ spuriously inflated style-factor volatility, plus a jumpy Beta benchmark. The buffer roughly halves turnover to $1$--$2\%$, buying a quieter, more honest model for free.
 \end{intuition}
 
 \textbf{Two coupled buffers.} Stability is actually enforced by \emph{two} asymmetries acting together: the rank hysteresis band of this section \emph{and} the ATVR add/retain gap of Sec.\ \ref{sec:liq}. A prior member is dropped only when \emph{both} lenient conditions fail --- its rank slips past the band \emph{and} its ATVR falls below the retain floor. Equivalently, a borderline name is retained if \emph{either} buffer still holds it. The two independent dead-bands are what keep churn so low.
@@ -446,7 +446,7 @@ Check~3 hard-codes four named mega-caps and asserts their presence every eligibl
 
 \textbf{The market-cap floor.} The effective floor --- a low-hundreds-of-millions effective market-cap floor --- binds on essentially every date: the cap-target proxy means the smallest included name sits near the floor by construction. What \emph{drifts} across the decades is the upper tail: the $5$th and $10$th percentiles of in-ESTU mcap climb steadily as the market grows.
 
-\section{Summary, and one caveat}\label{sec:summary}
+\section{Summary}\label{sec:summary}
 
 \paragraph{Learning objectives.}
 \begin{itemize}[nosep,leftmargin=1.4em]
@@ -457,17 +457,17 @@ Check~3 hard-codes four named mega-caps and asserts their presence every eligibl
 \begin{intuition}
 Read membership as a pipeline, left to right --- each screen feeds the next:
 \[
-\text{alive at }t \;\to\; \underbrace{\text{hard filters}}_{\text{domestic, listed}} \;\to\; \underbrace{\text{liquidity}}_{\text{ATVR }20/10} \;\to\; \underbrace{\text{cap target}}_{\approx 99\%} \;\to\; \underbrace{\text{stability buffer}}_{\text{over time}} \;\to\; E_t.
+\text{alive at }t \;\to\; \underbrace{\text{hard filters}}_{\text{domestic, listed}} \;\to\; \underbrace{\text{liquidity}}_{\text{ATVR }20/10} \;\to\; \underbrace{\text{stability buffer}}_{\text{over time}} \;\to\; E_t.
 \]
-Start from every stock alive at $t$; keep domestic common stock (REITs included) on major exchanges; prune the thinly-traded with the ATVR proxy; take the cap target to hit $\approx 99\%$ coverage; then apply the buffer across time to damp churn. Each screen does one job, and the order matters --- liquidity before the cap target, the buffer last.
+Start from every stock alive at $t$; keep domestic common stock (REITs included) on major exchanges; prune the thinly-traded with the ATVR proxy; then apply the buffer across time to damp churn. Each screen does one job, and the order matters --- liquidity before the cap target, the buffer last.
 \end{intuition}
 
 \begin{keyresult}
-The single set $E_t$ feeds the standardisation moments, the Beta benchmark, the WLS sample, and every orthogonalisation sample. Build it once, set its parameters from first principles, and \emph{freeze} them --- every later set then inherits a consistent universe for free. The discipline is the deliverable.
+The single set $E_t$ feeds the standardization moments, the Beta benchmark, the WLS sample, and every orthogonalisation sample. Build it once, set its parameters from first principles, and \emph{freeze} them --- every later set then inherits a consistent universe for free. The discipline is the deliverable.
 \end{keyresult}
 
 \begin{pitfall}
-\textbf{The caveat.} The load-bearing limitation is \emph{total}-not-\emph{float} market cap. Total mcap inflates the effective size of founder- and insider-controlled names (a tightly-held firm looks larger and more includable than its tradeable float warrants), which biases both inclusion and cap weights, and feeds straight through to the ATVR denominator. The lever is procuring free-float data (MSCI or FactSet) and recomputing the cap target, the cap weights, and ATVR on float. Secondly, the proxy has never been validated against \emph{actual} IMI membership; the lever there is a licensed-constituent overlap study to measure where our screens and MSCI's disagree.
+\textbf{Total, not float.} The load-bearing limitation is \emph{total}-not-\emph{float} market cap. Total mcap inflates the effective size of founder- and insider-controlled names (a tightly-held firm looks larger and more includable than its tradeable float warrants), which biases both inclusion and cap weights, and feeds straight through to the ATVR denominator. The lever is procuring free-float data (MSCI or FactSet) and recomputing the cap target, the cap weights, and ATVR on float. Secondly, the proxy has never been validated against \emph{actual} IMI membership; the lever there is a licensed-constituent overlap study to measure where our screens and MSCI's disagree.
 \end{pitfall}
 
 \appendix
