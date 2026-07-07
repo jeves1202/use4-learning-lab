@@ -35,7 +35,7 @@ If you're new to the space and the data, budget roughly **a month of focused wor
   - Core fundamentals (e.g. SF1/SF3-style tables)
   - Daily prices and corporate actions
   - Any other tables you choose for liquidity, shares, etc.
-- **[Fama–French factor datasets](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/)** for market/benchmark excess returns where convenient (free, hosted by Dartmouth).
+- **[Fama–French factor datasets](https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/)** for market/benchmark excess returns where convenient (free, hosted by Dartmouth).
 
 You'll need to be comfortable reading the Sharadar schema docs and mapping fields to what the USE4 methodology expects (market cap, earnings, book value, sales, assets, dividends, and so on).
 

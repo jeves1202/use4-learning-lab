@@ -230,7 +230,7 @@ $\Fmat$ & factor-return covariance ($K\times K$) \\
 $\Del$ & specific-variance diagonal ($N\times N$) \\
 $\Vmat,\ V$ & asset covariance $=\Xmat\Fmat\Xmat\T+\Del$ \\
 $\wvec$ & portfolio weight vector; ``the market'' is the ESTU cap-weighted $\wvec$ \\
-$\sigma_p$ & portfolio volatility \\
+$\sigma^2_p$ & portfolio volatility \\
 $N$ & number of assets ($\approx 2{,}500$) \\
 $K$ & number of factors ($=68$: country $+$ 55 industries $+$ 12 styles) \\
 $m_{i,t}$ & total market capitalisation of stock $i$ at date $t$ \\
@@ -282,7 +282,7 @@ A descriptor uses trailing-twelve-month earnings. Explain why aligning it to the
   \item \textbf{Styles} (12 columns): measurable tilts---size, book-to-price, momentum, residual volatility, leverage, liquidity, earnings yield, dividend yield, growth, non-linear size, non-linear beta, and beta.
 \end{itemize}
 
-The twelve styles share one skeleton: form a raw descriptor, trim its extreme tails, orthogonalise it where it would otherwise duplicate another factor, and standardise. Standardisation is to \emph{cap-weighted mean zero and equal-weighted unit standard deviation} over the ESTU. The canonical shipped model is \emph{estimate-free}: where a descriptor cannot be computed for a stock, the exposure is simply absent and the standardisation and coverage rules handle it, rather than imputing the value from a model.
+The twelve styles share one skeleton: form a raw descriptor, trim its extreme tails, orthogonalise it where it would otherwise duplicate another factor, and standardise. Standardisation is to \emph{cap-weighted mean zero and equal-weighted unit standard deviation} over the ESTU. The canonical shipped model is \emph{estimate-free}: where a descriptor cannot be computed for a stock, the exposure is simply absent and the standardisation and coverage rules handle it, rather than imputing the value from a model. However, this decision is largely made due to assumptions that you will simply upgrade to better data if you intend to use this model for returns -- in which case estimates are not needed. You may find that you want to estimate missing values and include them in your own construction.
 
 \begin{intuition}
 Cap-weighting the mean to zero means the market portfolio has zero exposure to every style by construction. So when the regression runs, the market's return is absorbed entirely by the country factor, and styles describe only \emph{deviations} from the market---a value tilt, a small-cap tilt. That is exactly the behaviour we want: the cap-weighted market is style-neutral, and style factors carry the cross-sectional spread.

@@ -19,29 +19,31 @@ Audits the Country factor: a single US-market intercept constrained to be orthog
 
 ### Anchor Artifact
 
-Deliverable: `data/out/country_anchor.parquet`, zstd, statistics=True.
+Deliverable: `data/out/country_use4.parquet`, zstd, statistics=True.
 
 | Column | Dtype | Description |
 |---|---|---|
 | `permaticker` | Int64 | Sharadar permanent ticker ID |
 | `signal_date` | Date | End-of-month rebalance date |
-| `in_estu` | Bool | ESTU membership on `signal_date` |
+| `in_estu` | Bool | Always True — the anchor contains in-ESTU rows only |
 | `mcap` | Float64 | Market cap on `signal_date` (cap-weighting) |
 | `country` | Float64 | Country factor exposure (always 1.0 for all stocks) |
-| `w_reg` | Float64 | WLS regression weight: √(mcap) for ESTU; 0 for non-ESTU |
+| `w_reg` | Float64 | √mcap regression weight, normalized to sum to 1 per date over the ESTU |
 
 ### CSR Returns Artifact
 
-Deliverable: `data/out/csr_validation_returns.parquet`
+Validation artifact (not a model deliverable): `data/out/csr_validation_returns.parquet`
 
 | Column | Dtype | Description |
 |---|---|---|
-| `signal_date` | Date | End-of-month rebalance date |
-| `factor` | Utf8 | Factor name (country, ind_*, style_*) |
-| `f_c` | Float64 | Cross-sectional regression return for the factor |
-| `se` | Float64 | Standard error of the return estimate |
-| `t_stat` | Float64 | t-statistic |
-| `n_obs` | Int64 | Number of stocks in the CSR |
+| `signal_date` | Date | Exposure date t (start of the return month) |
+| `ret_date` | Date | End of the return month (the next signal date) |
+| `factor` | Utf8 | Factor name (country, the 55 industry names, or the 12 style names) |
+| `f` | Float64 | Factor return for the month (null if the column was degenerate that month) |
+| `r2` | Float64 | Weighted cross-sectional R² of the month's regression (repeated per row) |
+| `n_stocks` | UInt32 | Number of stocks in the month's regression (repeated per row) |
+
+> *Note: the production CSR (`05_csr/csr_spec.ipynb`) applies stricter sample rules — complete-case transitions with n < 100 stocks are skipped — so its transition count (~303) is by design lower than this validation CSR's 327.*
 
 ---
 
