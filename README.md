@@ -10,11 +10,11 @@ It is meant for hopeful quants who want something serious and technical on their
 
 ## How this repo works
 
-Each numbered step ships two files and withholds a third:
+Each numbered step ships a spec and withholds the build; the textbook is the reference:
 
+- **`textbook/`** — the reference. Most steps have a chapter (the estimation universe, each style factor, industries, the CSR, factor covariance, specific risk, risk decomposition) whose **Measured** boxes carry the numbers a correct build reproduces — in shape, not vintage — alongside the full theory. It's your answer key.
 - **`*_spec.ipynb`** — a markdown-only spec: USE4 quotes, every judgment call the PDFs don't settle (with a chosen default), validation targets, and known pitfalls. This is your build target.
-- **`*_audit.md`** — the reference audit: what correct output looked like on our run, down to row counts and check outcomes.
-- **`*_build.ipynb`** — deliberately **not provided**. Writing it is the point. The spec tells you what to build and why; the audit tells you whether you built it.
+- **`*_build.ipynb`** — deliberately **not provided**. Writing it is the point. The spec tells you what to build and why.
 
 Read the READMEs all the way through before you start and refer back to them. They are intentionally concise but dense — understanding what you're getting into is the single most helpful thing you can do for yourself here.
 
@@ -33,7 +33,7 @@ Working front to back, you end up with a complete risk model:
 - **Specific risk** — a five-layer per-stock idiosyncratic volatility model (time-series, structural, coverage blend, Bayesian shrinkage, regime multiplier).
 - **Portfolio risk decomposition** — σ²(portfolio) = wᵀXFXᵀw + wᵀΔw, with Euler attribution by factor group and active risk versus the cap-weighted market.
 
-Every step ends with an explicit PASS/FAIL validation battery, and every audit documents the reference numbers you're trying to reproduce in shape (not in vintage).
+Every step ends with an explicit PASS/FAIL validation battery, and the textbook chapter documents the reference numbers you're trying to reproduce in shape (not in vintage).
 
 If you're new to the space and the data, budget roughly **a month of focused work** to get through ESTU plus a few core factors at a solid level. The full risk model is a bigger commitment — but it's built one bounded step at a time.
 
@@ -71,16 +71,16 @@ uv run python ...  # run scripts, or open notebooks via your IDE
 Numbered steps — do them in order.
 
 ```
-00_data_cleaning/             # STEP 0 — raw Sharadar CSVs → cleaned parquet (planned)
+00_data_cleaning/             # STEP 0 — raw Sharadar CSVs → cleaned parquet
+  cleaning_spec.ipynb         #   principles + your build target
+  cleaning_build.ipynb        #   <- YOU write this
 01_estu/                      # STEP 1 — the estimation universe
   estu_spec.ipynb             #   the spec; your build target
-  estu_audit.md               #   reference audit (our numbers, for comparison)
   estu_build.ipynb            #   <- YOU write this
-01.5_daily/                   # STEP 1.5 — shared daily returns panel (build after Beta + BP)
+01.5_daily/                   # STEP 1.5 — shared daily returns panel (feeds the time-series factors)
 02_style_factors/             # STEP 2 — the 12 style factors
   beta/                       #   beta/, size/, mom/, ... one dir per factor
     beta_spec.ipynb
-    beta_audit.md
     beta_build.ipynb          #   <- YOU write this
   daily_panel/                #   the refactor module the 01.5 step formalizes
 03_industry_factors/          # STEP 3 — industry factors (you design the scheme)
@@ -88,32 +88,31 @@ Numbered steps — do them in order.
 05_csr/                       # STEP 5 — the cross-sectional regression
   csr_spec.ipynb              #   monthly production CSR
   daily_csr_spec.ipynb        #   daily sibling — Layer 0 for steps 06 and 07
-  csr_audit.md                #   reference audit (covers the monthly build only, for now)
 06_fcov/                      # STEP 6 — factor covariance forecast
 07_specific_risk/             # STEP 7 — specific (idiosyncratic) risk
 08_risk_decomp/               # STEP 8 — portfolio risk decomposition (runs last)
 common/                       # your shared utilities (you create this as you go)
 data/                         # not version-controlled; see data/README.md
 docs/                         # factor overview + usage conventions
-textbook/                     # LaTeX notes on the model, one chapter per stage, with PDFs
+textbook/                     # the reference: one chapter per stage (.tex + PDFs)
 ```
 
-### Status
+### The steps
 
-| Step | Contents | Status |
-|---|---|---|
-| 00 Data cleaning | Sharadar CSV → parquet pipeline | planned — being built by Maxwell |
-| 01 ESTU | spec + reference audit | **shipped** |
-| 01.5 Daily panel | spec + reference audit | **shipped** |
-| 02 Style factors | 12 specs + reference audits | **shipped** |
-| 03 Industry factors | spec + reference audit (scheme design is yours) | **shipped** |
-| 04 Country factor | spec + reference audit (anchor + validation CSR) | **shipped** |
-| 05 CSR | monthly + daily specs; audit covers the monthly build for now | **shipped** |
-| 06 Factor covariance | spec + reference audit | **shipped** |
-| 07 Specific risk | spec + reference audit | **shipped** |
-| 08 Risk decomposition | spec + reference audit | **shipped** |
+| Step | What it gives you |
+|---|---|
+| 00 Data cleaning | cleaning spec (principles) |
+| 01 ESTU | spec + textbook chapter |
+| 01.5 Daily panel | spec |
+| 02 Style factors | 12 specs + textbook chapters |
+| 03 Industry factors | spec + textbook chapter (scheme design is yours) |
+| 04 Country factor | spec (anchor + validation CSR) |
+| 05 CSR | monthly + daily specs |
+| 06 Factor covariance | spec + textbook chapter |
+| 07 Specific risk | spec + textbook chapter |
+| 08 Risk decomposition | spec + textbook chapter |
 
-Specs and audits ship from a living research pipeline; expect occasional refinements to thresholds and conventions. The audits for steps 05–08 come from a slightly later data vintage than 01–04 (each audit states its own run date); the audits will be re-pinned to a single vintage before a full-ship release.
+Every step ships a spec (your build target) and, for most, a textbook chapter (your reference); the build notebooks are yours to write. The textbook's **Measured** boxes are drawn from a personal build run — treat them as targets to reproduce in shape, not vintage.
 
 ---
 
@@ -125,8 +124,8 @@ Then build:
 
 1. **`00` — Data cleaning.** Raw CSVs → typed, partitioned parquet. Everything downstream reads from it.
 2. **`01` — ESTU.** The foundation. Don't build factors on a junk universe.
-3. **`02` — Size, Beta, BP.** One spot fundamental, one time-series factor, one point-in-time join — you touch every mechanic you'll need.
-4. **`01.5` — Daily returns panel.** By now you've written the price/return plumbing two or three times. Extract it once, then retrofit the earlier factors to read it.
+3. **`01.5` — Daily returns panel.** The shared price/return plumbing every time-series factor reads — excess returns and the ESTU cap-weighted benchmark. Build it here, once, so each style factor just loads a parquet. *(Suggestion, not a requirement: if you'd rather feel the return machinery before abstracting it, build your first time-series factor — Beta — with the plumbing inline and extract the panel afterward; that's how the reference build grew. Either way, the style specs assume the panel exists.)*
+4. **`02` — Size, Beta, BP.** One spot fundamental, one time-series factor, one point-in-time join — you touch every mechanic you'll need.
 5. **`02` — remaining style factors** (EYLD, DYLD, LEV, LIQ, GRO, MOM, RESVOL, NLS, NLB). Order is flexible; respect `beta → {resvol, nlb}` and `size → nls`.
 6. **`03` — Industry factors.** You design the scheme; the spec explains the criteria.
 7. **`04` — Country factor.** The anchor (unit exposure + √mcap weights) plus a validation CSR that proves the whole system is well-posed.
@@ -141,10 +140,8 @@ Then build:
 
 ## Roadmap
 
-The model is now specified end to end (ESTU → exposures → CSR → covariance → specific risk → decomposition). What remains:
+The model is specified end to end: data cleaning → ESTU → exposures → CSR → covariance → specific risk → decomposition. The natural next layer is:
 
-- **Step 00** — the reference data-cleaning module (in progress).
-- **Audit refresh** — re-pinning all reference audits, including a daily-CSR audit, to a single data vintage at full-ship.
 - **Portfolio optimization** — putting the risk model to work in a basic optimizer, on top of step 08's decomposition machinery.
 
 ---

@@ -515,7 +515,7 @@ Quick reference for which fields feed which USE4-style factors.
 
 ## Model deliverables (`data/out/`)
 
-What the pipeline produces, by producing notebook. All parquet, `compression="zstd"`, `statistics=True`. Full schemas live in each step's spec and audit.
+What the pipeline produces, by producing notebook. All parquet, `compression="zstd"`, `statistics=True`. Full schemas live in each step's spec.
 
 | Artifact | Built by | Contents |
 |---|---|---|

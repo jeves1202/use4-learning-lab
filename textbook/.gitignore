@@ -1,0 +1,9 @@
+# The textbook ships as compiled PDFs only.
+# LaTeX sources (tex/), figures/, _shared/ notes, and all build
+# artifacts (*.aux, *.log, *.toc, *.out, *.fls, *.fdb_latexmk, ...)
+# are kept locally but not committed.
+#
+# Ignore everything in this directory, then re-include just the PDFs.
+*
+!*.pdf
+!.gitignore

@@ -53,7 +53,7 @@ The 12 USE4 style factors, in recommended build order. MoM ρ is the month-over-
 | 11 | **nlb** | cube of standardized Beta, ortho to Beta | beta_use4 output | beta | 0.8723 |
 | 12 | **nls** | cube of standardized Size, ortho to Size | size_use4 output | size | 0.9882 |
 
-Suggested path: **size → beta → bp** (one spot fundamental, one time-series, one PIT-join factor — you touch every mechanic), then extract the **daily panel**, then the rest in any order respecting `beta → {resvol, nlb}` and `size → nls`.
+Build order: extract the **daily panel** (step 01.5) first, then the styles. A good opening trio is **size → beta → bp** (one spot fundamental, one time-series, one PIT-join factor — you touch every mechanic), then the rest in any order respecting `beta → {resvol, nlb}` and `size → nls`. *(If you'd rather feel the return plumbing before abstracting it, you can build Beta with the plumbing inline and extract the panel afterward — see `01.5_daily/daily_spec.ipynb`.)*
 
 ---
 
@@ -154,7 +154,7 @@ MLEV gets the dominant 75% weight because market equity is forward-looking: it r
 
 **Preferred equity absent (deviations register A4).** With PE = 0: MLEV numerator loses the preferred equity term (understating the claim on firm value senior to common equity); BLEV's algebra simplifies because `BE + PE = EQUITY` becomes `EQUITY + DEBTNC / EQUITY`. The error damps the factor for financials and utilities — the heaviest preferred-stock issuers still sort to Q5 because their debt load alone drives the composite.
 
-**Character.** MoM ρ = 0.9908. Capital structure changes slowly; leverage is highly persistent. The ESTU clip rate is 2.71%, above the 0.5–2% target band (flagged WARN in the audit) — this reflects Leverage's structurally heavy right tail (distressed firms, financial companies) rather than a parameter error. Quintile spread 1.755, strictly monotone on reference dates.
+**Character.** MoM ρ = 0.9908. Capital structure changes slowly; leverage is highly persistent. The ESTU clip rate is 2.71%, above the 0.5–2% target band (worth a WARN, not a fix) — this reflects Leverage's structurally heavy right tail (distressed firms, financial companies) rather than a parameter error. Quintile spread 1.755, strictly monotone on reference dates.
 
 ---
 
@@ -302,7 +302,7 @@ The design exercise is applying USE4's four criteria (economic intuition, statis
 
 **Splits** arise when: a single USE4 2011 category has become large enough by 2026 to conflate economically distinct business models; and both halves of the split clear the floor independently.
 
-The specific decisions are yours to make based on the atom inventory and member counts you observe. The reference audit documents what the lab's scheme produced; your scheme may reasonably differ.
+The specific decisions are yours to make based on the atom inventory and member counts you observe. The textbook's industries chapter documents what the lab's scheme produced; your scheme may reasonably differ.
 
 ### Classification limitations
 
@@ -425,7 +425,7 @@ Everything above builds the exposure matrix `X`. Steps 05–08 turn it into a us
 σ²_p  =  wᵀ X F Xᵀ w  +  wᵀ Δ w
 ```
 
-with `F` the factor covariance matrix and `Δ` the diagonal of specific variances. Each stage has its own spec and reference audit; this is just the map.
+with `F` the factor covariance matrix and `Δ` the diagonal of specific variances. Each stage has its own spec and textbook chapter; this is just the map.
 
 **05 — Cross-sectional regression** (`05_csr/csr_spec.ipynb`). The engine of the model. Per month-transition, regress realized excess returns on `[country | 55 industries | 12 styles]` by WLS with √mcap weights and the cap-weighted zero-sum industry constraint (imposed by exact reparametrization, as above). Two deliverables: **factor returns** (`csr_factor_returns.parquet`) and **specific returns** (`csr_specific_returns.parquet`, extended out-of-sample to non-ESTU coverage stocks). Then the **daily sibling** (`05_csr/daily_csr_spec.ipynb`): the same engine run per trading day with month-end exposures held fixed intramonth. The daily factor returns and daily ESTU residuals are "Layer 0" for both stages that follow — ~6,300 daily observations instead of ~300 monthly ones is what makes a 68×68 covariance estimable at all.
 

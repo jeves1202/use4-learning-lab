@@ -21,12 +21,12 @@ building once you tire of re-parsing CSVs.
    is your outline.
 3. **Run it, then audit ruthlessly.** Print dataframes. Check nulls, mins,
    medians, maxes, quintiles, month-over-month stability.
-4. **Compare against the reference audit** (`*_audit.md`). Reference numbers
-   come from a specific data vintage — 2026-06-10 for steps 01–04; the risk-model
-   audits (05–08) each state their own, slightly later, run date. Your numbers
-   will differ in row counts and tails, but distribution shapes, stability
-   coefficients, calibration statistics, and check outcomes should match. A
-   flipped sign or a wrong order of magnitude is your bug, not vintage drift.
+4. **Compare against the textbook chapter.** Most steps have a chapter in
+   `textbook/` whose **Measured** boxes carry the reference numbers from a
+   personal build run. Your numbers will differ in row counts and tails with
+   your data vintage, but distribution shapes, stability coefficients,
+   calibration statistics, and check outcomes should match. A flipped sign or a
+   wrong order of magnitude is your bug, not vintage drift.
 
 The loop is identical for the risk-model steps (05–08); only the checks change
 character. Exposure builds validate distributions and stability; the risk-model
@@ -37,17 +37,17 @@ out in the spec's validation contract.
 ## Order
 
 `00_data_cleaning` first — every downstream step reads from `data/cleaned/`.
-Then `01_estu`, `02_style_factors` (with the `01.5_daily` panel extracted after
-Beta and BP — see `docs/FACTOR_OVERVIEW.md` for the dependency edges),
-`03_industry_factors`, and `04_country_factor`.
+Then `01_estu`, the `01.5_daily` panel, then `02_style_factors` (see
+`docs/FACTOR_OVERVIEW.md` for the dependency edges), `03_industry_factors`, and
+`04_country_factor`.
 
 Steps 05–08 then build the risk model on top, strictly in order with one
 exception: `05_csr` (the monthly production CSR, then the daily sibling) →
 `06_fcov` → `07_specific_risk` → `08_risk_decomp`. The exception: 07 consumes
 the **daily CSR residuals from 05 directly** — it does not depend on 06, so you
 can build 07 before or in parallel with 06. Step 08 composes everything and
-runs last. Note that `05_csr` ships two specs (monthly and daily) but one audit;
-the daily build's reference audit lands with the next audit refresh.
+runs last. Note that `05_csr` ships two specs — the monthly production CSR and
+the daily sibling.
 
 ## Conventions worth copying
 
