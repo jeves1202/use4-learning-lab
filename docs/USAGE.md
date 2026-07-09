@@ -13,20 +13,24 @@ building once you tire of re-parsing CSVs.
 
 ## The loop, per step
 
-1. **Read the spec notebook** (`*_spec.ipynb`) end to end. It is markdown-only:
+1. **Read the textbook chapter if available** (`**.pdf*`). This is where the
+   in-depth reference, explanation, and justification for each major build
+   component live. It is likely the part of the repo you will depend on most
+   heavily.
+2. **Read the spec notebook** (`*_spec.ipynb`) end to end. It is markdown-only:
    USE4 quotes, every NOT-IN-PDF judgment call with its default, validation
    targets, and known pitfalls.
-2. **Write the build notebook** (`*_build.ipynb`) yourself — by hand or by
+3. **Write the build notebook** (`*_build.ipynb`) yourself — by hand or by
    driving an AI assistant with the spec as context. The spec's stage structure
    is your outline.
-3. **Run it, then audit ruthlessly.** Print dataframes. Check nulls, mins,
+4. **Run it, then audit ruthlessly.** Print dataframes. Check nulls, mins,
    medians, maxes, quintiles, month-over-month stability.
-4. **Compare against the textbook chapter.** Most steps have a chapter in
-   `textbook/` whose **Measured** boxes carry the reference numbers from a
-   personal build run. Your numbers will differ in row counts and tails with
-   your data vintage, but distribution shapes, stability coefficients,
-   calibration statistics, and check outcomes should match. A flipped sign or a
-   wrong order of magnitude is your bug, not vintage drift.
+5. **Compare against the textbook chapter.** Textbook **Measured** boxes carry
+   the reference numbers from a personal build run. Your numbers will differ in
+   row counts and tails with your data vintage, but distribution shapes,
+   stability coefficients, calibration statistics, and check outcomes should
+   match. A flipped sign or a wrong order of magnitude is your bug, not vintage
+   drift.
 
 The loop is identical for the risk-model steps (05–08); only the checks change
 character. Exposure builds validate distributions and stability; the risk-model

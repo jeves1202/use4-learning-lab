@@ -267,7 +267,7 @@ A daily time series of market-cap and valuation ratios derived by combining the 
 | `ticker` | Ticker |
 | `date` | Date |
 | `lastupdated` | Last updated |
-| `marketcap` | Market cap (USD thousands — **check units in your version**) |
+| `marketcap` | Market cap (USD millions — **check units in your version**) |
 | `ev` | Enterprise value |
 | `evebit` | EV/EBIT |
 | `evebitda` | EV/EBITDA |
@@ -501,7 +501,7 @@ Quick reference for which fields feed which USE4-style factors.
 | **Non-linear Size** | Same as Size — cube of standardised Size |
 | **Momentum** | SEP.closeadj (12-1 month cumulative return) |
 | **Residual Volatility** | SEP.closeadj (std dev of residuals from Beta regression) |
-| **Liquidity** | SEP.volume / SEP.sharesbas (daily share turnover) |
+| **Liquidity** | SEP.volume / shares outstanding, imputed as DAILY.marketcap × 1e6 / SEP.closeunadj (daily share turnover) |
 | **Earnings Yield** | SF1.netinc + SF1.depamor (TTM, ARQ) / mcap — forward E/P unavailable; see limitations below |
 | **Dividend Yield** | SF1.dps (TTM, ARQ) / SEP.closeunadj — ACTIONS used for split adjustment |
 | **Book-to-Price** | SF1.equity (ARQ, latest PIT) / mcap — preferred equity unavailable; see limitations below |
