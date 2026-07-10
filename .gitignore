@@ -1,0 +1,14 @@
+# Textbook: ignore all sources, keep only compiled PDFs
+/docs/textbook/*
+!/docs/textbook/*.pdf
+
+# Ignore all incomplete steps but keep "size" in style factors
+/02_style_factors/*
+!/02_style_factors/size
+
+/03_industry_factors/*
+/04_country_factor/*
+/05_csr/*
+/06_fcov/*
+/07_specific_risk/*
+/08_risk_decomp/*

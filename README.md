@@ -12,11 +12,13 @@ It is meant for hopeful quants who want something serious and technical on their
 
 Each numbered step ships a spec and withholds the build; the textbook is the reference:
 
-- **`textbook/`** — the reference. Most steps have a chapter (the estimation universe, each style factor, industries, the CSR, factor covariance, specific risk, risk decomposition) whose **Measured** boxes carry the numbers a correct build reproduces — in shape, not vintage — alongside the full theory. It's your answer key.
+- **`docs/textbook/`** — the reference. Most steps have a chapter (the estimation universe, each style factor, industries, the CSR, factor covariance, specific risk, risk decomposition) whose **Measured** boxes carry the numbers a correct build reproduces — in shape, not vintage — alongside the full theory. It's your answer key.
 - **`*_spec.ipynb`** — a markdown-only spec: USE4 quotes, every judgment call the PDFs don't settle (with a chosen default), validation targets, and known pitfalls. This is your build target.
 - **`*_build.ipynb`** — deliberately **not provided**. Writing it is the point. The spec tells you what to build and why.
 
 Read the READMEs all the way through before you start and refer back to them. They are intentionally concise but dense — understanding what you're getting into is the single most helpful thing you can do for yourself here.
+
+**Note** I suggest building your factors in `.ipynb` format, but if you ever intend to run the entire pipeline at once, then switiching to `.py` will be essential for most hardware
 
 ---
 
@@ -58,11 +60,12 @@ You'll need to be comfortable reading the Sharadar schema docs and mapping field
 - **Core libraries:** `polars` for data wrangling, plus the usual numerical/scientific stack
 
 ```bash
-uv sync            # install dependencies
-uv run python ...  # run scripts, or open notebooks via your IDE
+uv sync                   # install dependencies
+uv run python ...         # run scripts, or open notebooks via your IDE
+uv add [dependency_name]  # adds new dependencies, and will be reflected in uv.lock and pyproject.toml
 ```
 
-**Hardware.** Doable on a reasonably modern laptop. Full-universe daily builds over decades of data will chug, so subset by date or use a smaller ESTU while you iterate.
+**Hardware.** Doable on a reasonably modern computer/laptop. Full-universe daily builds over decades of data, so it is useful to consider the tradeoffs between a multi-threaded approach (when possible) -- which is faster but has higher RAM requirements -- and a purely sequential approach. The best solution will likley be a hybrid of both.
 
 ---
 
@@ -91,10 +94,9 @@ Numbered steps — do them in order.
 06_fcov/                      # STEP 6 — factor covariance forecast
 07_specific_risk/             # STEP 7 — specific (idiosyncratic) risk
 08_risk_decomp/               # STEP 8 — portfolio risk decomposition (runs last)
-common/                       # your shared utilities (you create this as you go)
 data/                         # not version-controlled; see data/README.md
 docs/                         # factor overview + usage conventions
-textbook/                     # the reference: one chapter per stage (.tex + PDFs)
+  textbook/                   # the reference: one chapter per stage (.tex + PDFs)
 ```
 
 ### The steps
@@ -106,8 +108,8 @@ textbook/                     # the reference: one chapter per stage (.tex + PDF
 | 01.5 Daily panel | spec |
 | 02 Style factors | 12 specs + textbook chapters |
 | 03 Industry factors | spec + textbook chapter (scheme design is yours) |
-| 04 Country factor | spec (anchor + validation CSR) |
-| 05 CSR | monthly + daily specs |
+| 04 Country factor | spec (anchor + validation CSR) + textbook chapter (CSR) |
+| 05 CSR | monthly + daily specs + textbook chapter |
 | 06 Factor covariance | spec + textbook chapter |
 | 07 Specific risk | spec + textbook chapter |
 | 08 Risk decomposition | spec + textbook chapter |
@@ -118,14 +120,14 @@ Every step ships a spec (your build target) and, for most, a textbook chapter (y
 
 ## How to proceed
 
-Read first, in order: **this README** → **`docs/FACTOR_OVERVIEW.md`** (what every factor and stage is, and why) → **`data/README.md`** (schemas, field mapping, structural limitations vs USE4) → **`docs/USAGE.md`** (the per-step loop and conventions).
+Read first, in order: **this README** → **`docs/USAGE.md`** (the per-step loop and conventions).
 
 Then build:
 
 1. **`00` — Data cleaning.** Raw CSVs → typed, partitioned parquet. Everything downstream reads from it.
 2. **`01` — ESTU.** The foundation. Don't build factors on a junk universe.
 3. **`01.5` — Daily returns panel.** The shared price/return plumbing every time-series factor reads — excess returns and the ESTU cap-weighted benchmark. Build it here, once, so each style factor just loads a parquet. *(Suggestion, not a requirement: if you'd rather feel the return machinery before abstracting it, build your first time-series factor — Beta — with the plumbing inline and extract the panel afterward; that's how the reference build grew. Either way, the style specs assume the panel exists.)*
-4. **`02` — Size, Beta, BTOP.** One spot fundamental, one time-series factor, one point-in-time join — you touch every mechanic you'll need.
+4. **`02` — Size, Beta, BTOP.** One spot fundamental, one time-series factor, one point-in-time join — you touch every fundamental mechanic you'll need for the style factors.
 5. **`02` — remaining style factors** (EYLD, DYLD, LEV, LIQ, GRO, MOM, RESVOL, NLS, NLB). Order is flexible; respect `beta → {resvol, nlb}` and `size → nls`.
 6. **`03` — Industry factors.** You design the scheme; the spec explains the criteria.
 7. **`04` — Country factor.** The anchor (unit exposure + √mcap weights) plus a validation CSR that proves the whole system is well-posed.
