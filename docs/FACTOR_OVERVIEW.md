@@ -42,7 +42,7 @@ The 12 USE4 style factors, in recommended build order. MoM ρ is the month-over-
 |---|---|---|---|---|---|
 | 1 | **size** | ln(market cap), standardized | DAILY/SEP mcap | ESTU | 0.9967 |
 | 2 | **beta** | EW-OLS slope on ESTU benchmark, 252d / 63d half-life | SEP returns, RF | ESTU | 0.9458 |
-| 3 | **bp** | book equity / market cap | SF1 ARQ equity | ESTU | 0.9773 |
+| 3 | **btop** | book equity / market cap | SF1 ARQ equity | ESTU | 0.9773 |
 | 4 | **eyld** | 0.6·CETOP + 0.4·ETOP (EPFWD unavailable) | SF1 TTM netinc, depamor | ESTU | 0.9630 |
 | 5 | **dyld** | TTM DPS / price, split-adjusted, corrupt-guarded | SF1 ARQ dps, ACTIONS | ESTU | 0.9927 |
 | 6 | **lev** | 0.75·MLEV + 0.15·DTOA + 0.10·BLEV (standardized subs) | SF1 ARQ balance sheet | ESTU | 0.9908 |
@@ -53,7 +53,7 @@ The 12 USE4 style factors, in recommended build order. MoM ρ is the month-over-
 | 11 | **nlb** | cube of standardized Beta, ortho to Beta | beta_use4 output | beta | 0.8723 |
 | 12 | **nls** | cube of standardized Size, ortho to Size | size_use4 output | size | 0.9882 |
 
-Build order: extract the **daily panel** (step 01.5) first, then the styles. A good opening trio is **size → beta → bp** (one spot fundamental, one time-series, one PIT-join factor — you touch every mechanic), then the rest in any order respecting `beta → {resvol, nlb}` and `size → nls`. *(If you'd rather feel the return plumbing before abstracting it, you can build Beta with the plumbing inline and extract the panel afterward — see `01.5_daily/daily_spec.ipynb`.)*
+Build order: extract the **daily panel** (step 01.5) first, then the styles. A good opening trio is **size → beta → btop** (one spot fundamental, one time-series, one PIT-join factor — you touch every mechanic), then the rest in any order respecting `beta → {resvol, nlb}` and `size → nls`. *(If you'd rather feel the return plumbing before abstracting it, you can build Beta with the plumbing inline and extract the panel afterward — see `01.5_daily/daily_spec.ipynb`.)*
 
 ---
 
@@ -91,9 +91,9 @@ Build order: extract the **daily panel** (step 01.5) first, then the styles. A g
 
 ---
 
-### 3. Book-to-Price (bp)
+### 3. Book-to-Price (btop)
 
-**Economic role.** Book-to-Price (the inverse of Price/Book) is the canonical value factor: stocks trading cheaply relative to their accounting book value have historically outperformed growth stocks over long horizons. The mechanism is actively debated — competing explanations include rational mispricing that reverts, compensation for financial distress risk, and mean-reverting investor sentiment. What is agreed is the empirical spread across markets and decades. In USE4, BP is one of three value-oriented factors alongside Earnings Yield and Dividend Yield; together they form the "value cluster." BP is the purest balance-sheet value signal, anchoring to the stock of net assets rather than the flow of earnings or income. Its complement factors (EYLD, DYLD) capture cash-generation and income signals from the income statement.
+**Economic role.** Book-to-Price (the inverse of Price/Book) is the canonical value factor: stocks trading cheaply relative to their accounting book value have historically outperformed growth stocks over long horizons. The mechanism is actively debated — competing explanations include rational mispricing that reverts, compensation for financial distress risk, and mean-reverting investor sentiment. What is agreed is the empirical spread across markets and decades. In USE4, BTOP is one of three value-oriented factors alongside Earnings Yield and Dividend Yield; together they form the "value cluster." BTOP is the purest balance-sheet value signal, anchoring to the stock of net assets rather than the flow of earnings or income. Its complement factors (EYLD, DYLD) capture cash-generation and income signals from the income statement.
 
 **USE4 specification.** `BTOP = book equity / current market cap`. Book equity is defined as total shareholders' equity attributable to the parent minus preferred equity. Market cap is contemporaneous at the signal date, not the filing date — which is critical: a filing from six months ago paired with a six-months-stale price would produce an incorrect ratio that combines stale fundamentals with stale price action in a misleading way.
 
@@ -440,7 +440,7 @@ with `F` the factor covariance matrix and `Δ` the diagonal of specific variance
 ```
 estu_build
   └──► daily_build
-         └──► {size, beta, bp, eyld, dyld, lev, liq, gro, mom}   (parallel)
+         └──► {size, beta, btop, eyld, dyld, lev, liq, gro, mom}   (parallel)
                 ├──► resvol         (needs beta)
                 ├──► nlb            (needs beta)
                 └──► nls            (needs size)

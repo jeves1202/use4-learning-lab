@@ -125,7 +125,7 @@ Then build:
 1. **`00` — Data cleaning.** Raw CSVs → typed, partitioned parquet. Everything downstream reads from it.
 2. **`01` — ESTU.** The foundation. Don't build factors on a junk universe.
 3. **`01.5` — Daily returns panel.** The shared price/return plumbing every time-series factor reads — excess returns and the ESTU cap-weighted benchmark. Build it here, once, so each style factor just loads a parquet. *(Suggestion, not a requirement: if you'd rather feel the return machinery before abstracting it, build your first time-series factor — Beta — with the plumbing inline and extract the panel afterward; that's how the reference build grew. Either way, the style specs assume the panel exists.)*
-4. **`02` — Size, Beta, BP.** One spot fundamental, one time-series factor, one point-in-time join — you touch every mechanic you'll need.
+4. **`02` — Size, Beta, BTOP.** One spot fundamental, one time-series factor, one point-in-time join — you touch every mechanic you'll need.
 5. **`02` — remaining style factors** (EYLD, DYLD, LEV, LIQ, GRO, MOM, RESVOL, NLS, NLB). Order is flexible; respect `beta → {resvol, nlb}` and `size → nls`.
 6. **`03` — Industry factors.** You design the scheme; the spec explains the criteria.
 7. **`04` — Country factor.** The anchor (unit exposure + √mcap weights) plus a validation CSR that proves the whole system is well-posed.

@@ -547,7 +547,7 @@ Sharadar is a reported-financials database with no analyst estimates, no float s
 
 **Preferred equity balance unavailable.** SF1 has no preferred equity line item on the balance sheet (only `prefdivis` on the income statement). This affects two factors:
 
-- *BP*: book equity should be common equity (total equity minus preferred equity). The lab uses `equity` directly; for the rare firms with material preferred stock the BE is slightly overstated.
+- *BTOP*: book equity should be common equity (total equity minus preferred equity). The lab uses `equity` directly; for the rare firms with material preferred stock the BE is slightly overstated.
 - *LEV* (MLEV and BLEV): the USE4 definition adds preferred equity to the numerators. The lab omits it. `debtnc` null is treated as zero (no debt of that type), which is correct for ~80% of rows.
 
 **No licensed taxonomy — engineered 55-factor industry scheme.** USE4's 60 industry factors are built on GICS, which is licensed and absent from Sharadar. The lab uses Sharadar's `industry` field (154 observed atoms, version-controlled in `03_industry_factors/industry_scheme.csv`) aggregated into 55 factors targeting USE4's published design criteria. This is not taxonomy purity — it is an engineered approximation that should be re-screened against explanatory power when the cross-sectional regression is assembled.
