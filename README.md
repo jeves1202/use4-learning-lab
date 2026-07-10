@@ -8,6 +8,16 @@ It is meant for hopeful quants who want something serious and technical on their
 
 ---
 
+## Current State
+
+The only shipped contruction guides (specs) are stages 00, 01, 01.5, and `size` and `beta` within 02. The textbook is fully shipped. The rest of the build guides will be published shortly. All shipped elements are in beta development, and any feedback is greatly appreciated. Direct all feedback to:
+
+```bash
+jakobseves@gmail.com
+```
+
+---
+
 ## How this repo works
 
 Each numbered step ships a spec and withholds the build; the textbook is the reference:
@@ -18,7 +28,7 @@ Each numbered step ships a spec and withholds the build; the textbook is the ref
 
 Read the READMEs all the way through before you start and refer back to them. They are intentionally concise but dense — understanding what you're getting into is the single most helpful thing you can do for yourself here.
 
-**Note** I suggest building your factors in `.ipynb` format, but if you ever intend to run the entire pipeline at once, then switiching to `.py` will be essential for most hardware
+**Note** I suggest building your factors in `.ipynb` format, but if you intend to run the entire pipeline at once, then switiching to `.py` will be essential for most hardware.
 
 ---
 
