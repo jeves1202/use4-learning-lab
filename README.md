@@ -10,7 +10,7 @@ It is meant for hopeful quants who want something serious and technical on their
 
 ## Current State
 
-The only shipped contruction guides (specs) are stages 00, 01, 01.5, and `size` and `beta` within 02. The textbook is fully shipped. The rest of the build guides will be published shortly. All shipped elements are in beta development, and any feedback is greatly appreciated. Direct all feedback to:
+All shipped elements are in beta development, and any feedback is greatly appreciated. Direct all feedback to:
 
 ```bash
 jakobseves@gmail.com
@@ -28,7 +28,7 @@ Each numbered step ships a spec and withholds the build; the textbook is the ref
 
 Read the READMEs all the way through before you start and refer back to them. They are intentionally concise but dense — understanding what you're getting into is the single most helpful thing you can do for yourself here.
 
-**Note** I suggest building your factors in `.ipynb` format, but if you intend to run the entire pipeline at once, then switiching to `.py` will be essential for most hardware.
+**Note** I suggest building your factors in `.ipynb` format, but if you intend to run the entire pipeline at once, then switching to `.py` will be essential for most hardware.
 
 ---
 
@@ -75,7 +75,7 @@ uv run python ...         # run scripts, or open notebooks via your IDE
 uv add [dependency_name]  # adds new dependencies, and will be reflected in uv.lock and pyproject.toml
 ```
 
-**Hardware.** Doable on a reasonably modern computer/laptop. Full-universe daily builds over decades of data, so it is useful to consider the tradeoffs between a multi-threaded approach (when possible) -- which is faster but has higher RAM requirements -- and a purely sequential approach. The best solution will likley be a hybrid of both.
+**Hardware.** Doable on a reasonably modern computer/laptop. Full-universe daily builds over decades of data, so it is useful to consider the tradeoffs between a multi-threaded approach (when possible) -- which is faster but has higher RAM requirements -- and a purely sequential approach. The best solution will likely be a hybrid of both.
 
 ---
 
@@ -95,7 +95,6 @@ Numbered steps — do them in order.
   beta/                       #   beta/, size/, mom/, ... one dir per factor
     beta_spec.ipynb
     beta_build.ipynb          #   <- YOU write this
-  daily_panel/                #   the refactor module the 01.5 step formalizes
 03_industry_factors/          # STEP 3 — industry factors (you design the scheme)
 04_country_factor/            # STEP 4 — market intercept anchor + validation CSR
 05_csr/                       # STEP 5 — the cross-sectional regression
@@ -184,6 +183,20 @@ The model is specified end to end: data cleaning → ESTU → exposures → CSR 
 
 ---
 
+## AI disclosure
+
+This repo was built with heavy AI assistance (Anthropic's Claude), directed, audited, and edited by the author. Specifically:
+
+- **The specs and textbook chapters were drafted and edited with AI**, working from the author's own research pipeline — the methodology decisions, parameter choices, and the build itself are the author's, and every page was reviewed by hand.
+- **Every measured number is real.** The textbook's Measured boxes and the specs' validation targets come from actual runs of the author's build — none are model-generated.
+- **AI also handled editorial passes**: consistency sweeps, cross-reference checks, spelling normalization, and restructuring.
+
+This mirrors the workflow the repo teaches: drive an AI assistant hard, and treat its output as deeply untrustworthy until you have audited it against real data. The mistakes that survived that process are the author's.
+
+---
+
 ## License & attribution
 
-Educational and independent. Not affiliated with or endorsed by MSCI. Sharadar and Fama–French data are subject to their respective licenses and terms — obtain and use them accordingly.
+© 2026 Jakob Eves. The original content of this repository (specs, textbook, and documentation) is licensed under [CC BY-NC 4.0](LICENSE) — share and adapt freely with attribution, non-commercially.
+
+**Exclusions.** Short verbatim excerpts from the MSCI Barra USE4 Methodology Notes and Empirical Notes, quoted in the specs and textbook for educational commentary, remain the property of MSCI and are **not** covered by this license. This project is independent and not affiliated with or endorsed by MSCI. Sharadar and Fama–French data are subject to their respective licenses and terms — obtain and use them accordingly; no data ships with this repo.

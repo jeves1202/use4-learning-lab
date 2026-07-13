@@ -41,9 +41,9 @@ out in the spec's validation contract.
 ## Order
 
 `00_data_cleaning` first — every downstream step reads from `data/cleaned/`.
-Then `01_estu`, the `01.5_daily` panel, then `02_style_factors` (see
-`docs/FACTOR_OVERVIEW.md` for the dependency edges), `03_industry_factors`, and
-`04_country_factor`.
+Then `01_estu`, the `01.5_daily` panel, then `02_style_factors` (order within
+the styles is flexible; respect `beta → {resvol, nlb}` and `size → nls`),
+`03_industry_factors`, and `04_country_factor`.
 
 Steps 05–08 then build the risk model on top, strictly in order with one
 exception: `05_csr` (the monthly production CSR, then the daily sibling) →
