@@ -277,7 +277,7 @@
     <hr class="rule-thin">
     <p class="identity">&sigma;<sub>p</sub><sup>2</sup> = <b>w</b><sup>&#8868;</sup><b>XFX</b><sup>&#8868;</sup><b>w</b> + <b>w</b><sup>&#8868;</sup><b>&Delta;w</b></p>
     <p class="identity-caption">the governing identity &mdash; factor risk plus specific risk; everything below serves it</p>
-    <p class="lede">An educational reconstruction of the Barra USE4 US equity risk model, built from Sharadar and Fama&ndash;French data and the published methodology notes. Each numbered step ships a <em>spec</em> and withholds the build &mdash; writing the build notebook is the point. The <em>textbook</em> is the intuitive key.</p>
+    <p class="lede">An educational reconstruction of the Barra USE4 US equity risk model, built from Sharadar and Fama&ndash;French data and the published methodology notes. Each numbered step contains a <em>spec</em> outlining the build &mdash; contructing the build notebook is the point. The <em>textbook</em> is intended to be the intuitive backdrop.</p>
     <nav class="toplinks">
       <a class="ext" href="https://github.com/jeves1202/use4-learning-lab">GitHub repo</a><span class="sep">&middot;</span><a class="ext" href="https://github.com/jeves1202/use4-learning-lab/blob/main/README.md">README</a><span class="sep">&middot;</span><a class="ext" href="https://github.com/jeves1202/use4-learning-lab/blob/main/docs/USAGE.md">Usage guide</a>
     </nav>
@@ -285,14 +285,7 @@
 
   <!-- ===================== how to read ===================== -->
   <div class="howto">
-    <p><strong>How this works.</strong> Work the steps in order. For each one, read the spec (under <em>Labs</em>), write the build notebook yourself, and check your numbers against the matching textbook chapter (under <em>Textbook</em>) &mdash; its <em>Measured</em> boxes come from a real build run and are targets to reproduce in shape, not vintage. Every step ends with an explicit PASS/FAIL validation battery.</p>
-    <div class="legend">
-      <span class="lead">Four boxes recur in every chapter:</span>
-      <span class="tag intuition">Intuition</span>
-      <span class="tag pitfall">Pitfall</span>
-      <span class="tag takeaway">Takeaway</span>
-      <span class="tag measured">Measured</span>
-    </div>
+    <p><strong>How this works.</strong> Work through the steps in order. For each one, read the relevant textbook chapter (under <em>Textbook</em>) if available, read the spec (under <em>Labs</em>), write the build notebook yourself, then check your numbers against the textbook chapter &mdash; its <em>Measured</em> boxes come from a real build run and are targets to reproduce. Note &mdash; however &mdash; that, for many reasons, you should not aim to replicate exact numbers. Every step ends with an explicit PASS/FAIL validation battery.</p>
   </div>
 
   <!-- ===================== tabs ===================== -->
@@ -303,7 +296,7 @@
 
   <!-- ===================== textbook panel ===================== -->
   <section id="panel-textbook" role="tabpanel" aria-labelledby="tab-textbook">
-    <p class="panel-note">About one chapter per stage of the model &mdash; full theory alongside measured numbers from the reference build. Ordered in build order; the overview stands alone and is never a prerequisite.</p>
+    <p class="panel-note">There exists a chapter for each conceptual stage of the model containing mainline theory as well as measured numbers from the reference build.
 
     <a class="feature" href="docs/textbook/overview_risk_model.pdf">
       <span class="feature-tag">Start here</span>
@@ -454,7 +447,7 @@
         <div class="group-head">
           <span class="stepno">02</span>
           <span class="group-title">Style Factors</span>
-          <span class="group-desc">one spec per factor &mdash; build Size, Beta, and Book-to-Price first; respect Beta&nbsp;&rarr;&nbsp;{RESVOL,&nbsp;NLB} and Size&nbsp;&rarr;&nbsp;NLS</span>
+          <span class="group-desc">one spec per factor &mdash; build Size, Beta, and Book-to-Price first</span>
         </div>
         <div class="grid">
           <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/size/size_spec.ipynb">
