@@ -3,10 +3,647 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An educational, from-scratch reconstruction of a USE4-style US equity factor risk model — textbook chapters (PDF) and build specs, from raw vendor CSVs to portfolio risk decomposition.">
   <title>USE4 Learning Lab</title>
+  <link rel="icon" href="data:image/svg+xml;utf8,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='12'%20fill='%23A51C30'/%3E%3Ctext%20x='32'%20y='45'%20font-family='Palatino,Georgia,serif'%20font-style='italic'%20font-size='40'%20fill='%23F7F4EF'%20text-anchor='middle'%3E%CF%83%3C/text%3E%3C/svg%3E">
+  <style>
+    /* ------------------------- palette (from the tex preamble) ------------- */
+    :root {
+      --crimson: #A51C30;
+      --ink:     #1A1A1A;
+      --steel:   #2C5F8A;
+      --amber:   #9A6A00;
+      --teal:    #1F6F6B;
+      --paper:   #F7F4EF;   /* paperlt */
+      --crimson-tint: #FAF4F5;   /* crimson!5  */
+      --steel-tint:   #F2F5F8;   /* steel!6    */
+      --amber-tint:   #F8F4ED;   /* amber!7    */
+      --teal-tint:    #F2F6F6;   /* teal!6     */
+      --rule-gray: #BABABA;      /* ink!30     */
+      --foot-gray: #8C8C8C;      /* black!45   */
+      --muted:     #6E675E;
+      --hairline:  #E3DDD2;
+      --card:      #FFFFFF;
+    }
+
+    /* ------------------------- fonts & base -------------------------------- */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: "Palatino Linotype", Palatino, "Book Antiqua", "URW Palladio L", Georgia, serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.55;
+      font-size: 17px;
+    }
+    .page { max-width: 58rem; margin: 0 auto; padding: 2.75rem 1.25rem 2.5rem; }
+
+    a { color: var(--steel); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    a.ext { color: var(--crimson); }
+    a.ext::after { content: "\2197"; font-size: 0.72em; margin-left: 0.18em; vertical-align: 0.18em; }
+
+    /* ------------------------- title block (mimics \maketitle) ------------ */
+    header.titleblock { text-align: center; margin-bottom: 2rem; }
+    .rule-thick { border: 0; border-top: 2px solid var(--steel); margin-bottom: 1.1rem; }
+    .rule-thin  { border: 0; border-top: 1px solid var(--steel); margin-top: 1.1rem; }
+    h1 {
+      font-size: clamp(2.1rem, 5.5vw, 3rem);
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      line-height: 1.15;
+    }
+    .subtitle {
+      font-size: clamp(1.02rem, 2.6vw, 1.22rem);
+      font-weight: 400;
+      color: var(--ink);
+      margin-top: 0.45rem;
+    }
+    .identity {
+      margin: 1.5rem auto 0.25rem;
+      font-size: 1.28rem;
+      font-style: italic;
+    }
+    .identity b { font-style: normal; }
+    .identity-caption {
+      font-size: 0.85rem;
+      color: var(--muted);
+      font-style: italic;
+      margin-bottom: 1.4rem;
+    }
+    .lede {
+      max-width: 44rem;
+      margin: 0 auto 1.1rem;
+      font-size: 0.98rem;
+      color: var(--ink);
+    }
+    .toplinks { font-size: 0.92rem; font-variant-caps: all-small-caps; letter-spacing: 0.05em; }
+    .toplinks span.sep { color: var(--rule-gray); margin: 0 0.5rem; }
+
+    /* ------------------------- "how to read" box (tcolorbox) -------------- */
+    .howto {
+      background: var(--card);
+      border: 1px solid var(--rule-gray);
+      border-radius: 3px;
+      padding: 1.05rem 1.25rem;
+      font-size: 0.94rem;
+      margin-bottom: 2.2rem;
+    }
+    .howto p + p { margin-top: 0.55rem; }
+    .legend { margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.45rem; align-items: center; }
+    .legend .lead { font-size: 0.85rem; color: var(--muted); font-style: italic; margin-right: 0.15rem; }
+    .tag {
+      display: inline-block;
+      font-size: 0.74rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      padding: 0.1rem 0.55rem;
+      border-radius: 3px;
+      border: 1px solid;
+    }
+    .tag.intuition { color: var(--crimson); border-color: var(--crimson); background: var(--crimson-tint); }
+    .tag.pitfall   { color: var(--amber);   border-color: var(--amber);   background: var(--amber-tint); }
+    .tag.takeaway  { color: var(--steel);   border-color: var(--steel);   background: var(--steel-tint); }
+    .tag.measured  { color: var(--teal);    border-color: var(--teal);    background: var(--teal-tint); }
+
+    /* ------------------------- tabs ---------------------------------------- */
+    .tabs {
+      display: flex;
+      gap: 0.25rem;
+      border-bottom: 1px solid var(--rule-gray);
+      margin-bottom: 1.4rem;
+    }
+    .tab {
+      appearance: none;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -1px;
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 1.14rem;
+      font-variant-caps: all-small-caps;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: 0.45rem 1.15rem 0.55rem;
+    }
+    .tab:hover { color: var(--crimson); }
+    .tab[aria-selected="true"] {
+      color: var(--steel);
+      font-weight: 700;
+      border-bottom-color: var(--crimson);
+    }
+
+    .panel-note {
+      font-size: 0.93rem;
+      font-style: italic;
+      color: var(--muted);
+      margin-bottom: 1.3rem;
+      max-width: 46rem;
+    }
+
+    /* ------------------------- feature box (keyresult style) --------------- */
+    .feature {
+      display: block;
+      background: var(--steel-tint);
+      border: 1px solid var(--steel);
+      border-radius: 3px;
+      padding: 0.95rem 1.15rem 1rem;
+      margin-bottom: 1.6rem;
+      color: inherit;
+    }
+    .feature:hover { text-decoration: none; box-shadow: 0 1px 4px rgba(44, 95, 138, 0.18); }
+    .feature:hover .feature-title { text-decoration: underline; }
+    .feature-tag {
+      display: inline-block;
+      background: var(--steel);
+      color: var(--paper);
+      font-size: 0.88rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.14rem 0.6rem;
+      border-radius: 2px;
+      margin-bottom: 0.5rem;
+      font-variant-caps: all-small-caps;
+    }
+    .feature-title { display: block; font-size: 1.22rem; font-weight: 700; color: var(--steel); }
+    .feature-sub { display: block; font-style: italic; font-size: 0.95rem; margin: 0.1rem 0 0.35rem; }
+    .feature-desc { display: block; font-size: 0.9rem; color: var(--ink); }
+
+    /* ------------------------- step rows ------------------------------------ */
+    .steps { display: flex; flex-direction: column; gap: 0.65rem; }
+    .row {
+      display: flex;
+      align-items: baseline;
+      gap: 0.9rem;
+      background: var(--card);
+      border: 1px solid var(--hairline);
+      border-left: 3px solid var(--steel);
+      border-radius: 3px;
+      padding: 0.72rem 1rem;
+      color: inherit;
+    }
+    .row:hover { text-decoration: none; border-left-color: var(--crimson); background: #FDFCFA; }
+    .row:hover .row-title { text-decoration: underline; }
+    .stepno {
+      flex: 0 0 3.1rem;
+      font-weight: 700;
+      color: var(--steel);
+      font-size: 1.05rem;
+      font-variant-numeric: tabular-nums;
+    }
+    .row-body { flex: 1 1 auto; min-width: 0; }
+    .row-title { font-weight: 700; color: var(--steel); font-size: 1.02rem; }
+    .row-desc { display: block; font-size: 0.86rem; color: var(--muted); margin-top: 0.08rem; }
+    .chip {
+      flex: 0 0 auto;
+      align-self: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 0.13rem 0.55rem;
+      border-radius: 3px;
+      border: 1px solid;
+      white-space: nowrap;
+    }
+    .chip-pdf { color: var(--steel); border-color: var(--steel); background: var(--steel-tint); }
+    .chip-nb  { color: var(--teal);  border-color: var(--teal);  background: var(--teal-tint); }
+
+    /* group (step 02 / step 05) */
+    .group { margin: 0.35rem 0 0.2rem; }
+    .group-head { display: flex; align-items: baseline; gap: 0.9rem; padding: 0.3rem 1rem 0.55rem 0; }
+    .group-head .stepno { flex: 0 0 3.1rem; padding-left: calc(3px + 1rem); box-sizing: content-box; }
+    .group-title { font-weight: 700; color: var(--steel); font-size: 1.15rem; }
+    .group-desc { font-size: 0.86rem; color: var(--muted); font-style: italic; }
+    .group .sub { margin-left: 2rem; }
+    .group .steps { gap: 0.55rem; }
+
+    /* ------------------------- factor grid ---------------------------------- */
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(13.5rem, 1fr));
+      gap: 0.6rem;
+      margin: 0.2rem 0 0.4rem 2rem;
+    }
+    .card {
+      display: flex;
+      flex-direction: column;
+      gap: 0.18rem;
+      background: var(--card);
+      border: 1px solid var(--hairline);
+      border-left: 3px solid var(--steel);
+      border-radius: 3px;
+      padding: 0.6rem 0.8rem 0.65rem;
+      color: inherit;
+    }
+    .card:hover { text-decoration: none; border-left-color: var(--crimson); background: #FDFCFA; }
+    .card:hover .card-title { text-decoration: underline; }
+    .card-top { display: flex; align-items: baseline; justify-content: space-between; gap: 0.5rem; }
+    .card-title { font-weight: 700; color: var(--steel); font-size: 0.96rem; }
+    .card-code {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      color: var(--muted);
+    }
+    .card-desc { font-size: 0.8rem; color: var(--muted); }
+
+    /* ------------------------- footer (mimics fancyfoot) ------------------- */
+    footer { margin-top: 3rem; }
+    .disclaimer {
+      font-size: 0.82rem;
+      color: var(--muted);
+      max-width: 46rem;
+      margin-bottom: 1.2rem;
+    }
+    .footrow {
+      border-top: 1px solid var(--hairline);
+      padding-top: 0.7rem;
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+      font-size: 0.8rem;
+      color: var(--foot-gray);
+    }
+    .footrow a { color: var(--foot-gray); text-decoration: underline; }
+    .footrow a:hover { color: var(--crimson); }
+
+    /* ------------------------- small screens ------------------------------- */
+    @media (max-width: 560px) {
+      body { font-size: 16px; }
+      .row { flex-wrap: wrap; gap: 0.35rem 0.75rem; }
+      .stepno { flex-basis: 2.4rem; }
+      .chip { margin-left: auto; }
+      .group .sub, .grid { margin-left: 0.75rem; }
+      .tab { padding: 0.45rem 0.8rem 0.55rem; font-size: 1.05rem; }
+    }
+  </style>
 </head>
 <body>
-  <h1>USE4 Learning Lab</h1>
-  <p><a href="/use4-learning-lab/docs/textbook/overview_risk_model.pdf">Open overview PDF</a></p>
+<div class="page">
+
+  <!-- ===================== title ===================== -->
+  <header class="titleblock">
+    <hr class="rule-thick">
+    <h1>USE4 Learning Lab</h1>
+    <p class="subtitle">A from-scratch, USE4-style US equity factor risk model &mdash; the assembly line from raw vendor CSVs to a portfolio risk forecast</p>
+    <hr class="rule-thin">
+    <p class="identity">&sigma;<sub>p</sub><sup>2</sup> = <b>w</b><sup>&#8868;</sup><b>XFX</b><sup>&#8868;</sup><b>w</b> + <b>w</b><sup>&#8868;</sup><b>&Delta;w</b></p>
+    <p class="identity-caption">the governing identity &mdash; factor risk plus specific risk; everything below serves it</p>
+    <p class="lede">An educational reconstruction of the Barra USE4 US equity risk model, built from Sharadar and Fama&ndash;French data and the published methodology notes. Each numbered step ships a <em>spec</em> and withholds the build &mdash; writing the build notebook is the point. The <em>textbook</em> is the answer key.</p>
+    <nav class="toplinks">
+      <a class="ext" href="https://github.com/jeves1202/use4-learning-lab">GitHub repo</a><span class="sep">&middot;</span><a class="ext" href="https://github.com/jeves1202/use4-learning-lab/blob/main/README.md">README</a><span class="sep">&middot;</span><a class="ext" href="https://github.com/jeves1202/use4-learning-lab/blob/main/docs/USAGE.md">Usage guide</a>
+    </nav>
+  </header>
+
+  <!-- ===================== how to read ===================== -->
+  <div class="howto">
+    <p><strong>How this works.</strong> Work the steps in order. For each one, read the spec (under <em>Labs</em>), write the build notebook yourself, and check your numbers against the matching textbook chapter (under <em>Textbook</em>) &mdash; its <em>Measured</em> boxes come from a real build run and are targets to reproduce in shape, not vintage. Every step ends with an explicit PASS/FAIL validation battery.</p>
+    <div class="legend">
+      <span class="lead">Four boxes recur in every chapter:</span>
+      <span class="tag intuition">Intuition</span>
+      <span class="tag pitfall">Pitfall</span>
+      <span class="tag takeaway">Takeaway</span>
+      <span class="tag measured">Measured</span>
+    </div>
+  </div>
+
+  <!-- ===================== tabs ===================== -->
+  <div class="tabs" role="tablist" aria-label="Site sections">
+    <button class="tab" id="tab-textbook" role="tab" aria-selected="true" aria-controls="panel-textbook">Textbook</button>
+    <button class="tab" id="tab-labs" role="tab" aria-selected="false" aria-controls="panel-labs">Labs</button>
+  </div>
+
+  <!-- ===================== textbook panel ===================== -->
+  <section id="panel-textbook" role="tabpanel" aria-labelledby="tab-textbook">
+    <p class="panel-note">One chapter per stage of the model &mdash; full theory alongside measured numbers from the reference build. Ordered in build order; the overview stands alone and is never a prerequisite.</p>
+
+    <a class="feature" href="docs/textbook/overview_risk_model.pdf">
+      <span class="feature-tag">Start here</span>
+      <span class="feature-title">The USE4 Risk Model, End to End</span>
+      <span class="feature-sub">The assembly line from data to a portfolio risk forecast</span>
+      <span class="feature-desc">A standalone conceptual tour of the whole pipeline: why each stage exists, what it produces, and how the stages chain into one number.</span>
+    </a>
+
+    <div class="steps">
+      <a class="row" href="docs/textbook/estu.pdf">
+        <span class="stepno">01</span>
+        <span class="row-body">
+          <span class="row-title">The Estimation Universe</span>
+          <span class="row-desc">The foundation: a broad, investable, liquid US universe in the spirit of MSCI USA IMI. Don&rsquo;t build factors on a junk universe.</span>
+        </span>
+        <span class="chip chip-pdf">PDF</span>
+      </a>
+
+      <div class="group">
+        <div class="group-head">
+          <span class="stepno">02</span>
+          <span class="group-title">Style Factors</span>
+          <span class="group-desc">twelve exposures, as close to USE4 definitions as public data allows &mdash; build Size, Beta, and Book-to-Price first</span>
+        </div>
+        <div class="grid">
+          <a class="card" href="docs/textbook/size.pdf">
+            <span class="card-top"><span class="card-title">Size</span><span class="card-code">SIZE</span></span>
+            <span class="card-desc">log market cap</span>
+          </a>
+          <a class="card" href="docs/textbook/beta.pdf">
+            <span class="card-top"><span class="card-title">Beta</span><span class="card-code">BETA</span></span>
+            <span class="card-desc">time-series regression on the cap-weighted market</span>
+          </a>
+          <a class="card" href="docs/textbook/btop.pdf">
+            <span class="card-top"><span class="card-title">Book-to-Price</span><span class="card-code">BTOP</span></span>
+            <span class="card-desc">book equity over market cap</span>
+          </a>
+          <a class="card" href="docs/textbook/eyld.pdf">
+            <span class="card-top"><span class="card-title">Earnings Yield</span><span class="card-code">EYLD</span></span>
+            <span class="card-desc">blended earnings-to-price</span>
+          </a>
+          <a class="card" href="docs/textbook/dyld.pdf">
+            <span class="card-top"><span class="card-title">Dividend Yield</span><span class="card-code">DYLD</span></span>
+            <span class="card-desc">trailing dividends over price</span>
+          </a>
+          <a class="card" href="docs/textbook/lev.pdf">
+            <span class="card-top"><span class="card-title">Leverage</span><span class="card-code">LEV</span></span>
+            <span class="card-desc">market and book leverage blend</span>
+          </a>
+          <a class="card" href="docs/textbook/liq.pdf">
+            <span class="card-top"><span class="card-title">Liquidity</span><span class="card-code">LIQ</span></span>
+            <span class="card-desc">share turnover at three horizons</span>
+          </a>
+          <a class="card" href="docs/textbook/gro.pdf">
+            <span class="card-top"><span class="card-title">Growth</span><span class="card-code">GRO</span></span>
+            <span class="card-desc">sales and earnings growth</span>
+          </a>
+          <a class="card" href="docs/textbook/mom.pdf">
+            <span class="card-top"><span class="card-title">Momentum</span><span class="card-code">MOM</span></span>
+            <span class="card-desc">relative strength, lagged</span>
+          </a>
+          <a class="card" href="docs/textbook/resvol.pdf">
+            <span class="card-top"><span class="card-title">Residual Volatility</span><span class="card-code">RESVOL</span></span>
+            <span class="card-desc">DASTD, CMRA, HSIGMA &mdash; orthogonalized to Beta</span>
+          </a>
+          <a class="card" href="docs/textbook/nls.pdf">
+            <span class="card-top"><span class="card-title">Non-linear Size</span><span class="card-code">NLS</span></span>
+            <span class="card-desc">cube of Size, orthogonalized to Size</span>
+          </a>
+          <a class="card" href="docs/textbook/nlb.pdf">
+            <span class="card-top"><span class="card-title">Non-linear Beta</span><span class="card-code">NLB</span></span>
+            <span class="card-desc">cube of Beta, orthogonalized to Beta</span>
+          </a>
+        </div>
+      </div>
+
+      <a class="row" href="docs/textbook/industries.pdf">
+        <span class="stepno">03</span>
+        <span class="row-body">
+          <span class="row-title">Industry Factors</span>
+          <span class="row-desc">Unit-exposure industry dummies &mdash; and why a defensible, point-in-time classification scheme is the real work.</span>
+        </span>
+        <span class="chip chip-pdf">PDF</span>
+      </a>
+
+      <a class="row" href="docs/textbook/csr.pdf">
+        <span class="stepno">04&ndash;05</span>
+        <span class="row-body">
+          <span class="row-title">The Cross-Sectional Regression</span>
+          <span class="row-desc">The engine: the country anchor and constraint that identify the system, then the regression that turns exposures into factor returns and specific returns.</span>
+        </span>
+        <span class="chip chip-pdf">PDF</span>
+      </a>
+
+      <a class="row" href="docs/textbook/fcov.pdf">
+        <span class="stepno">06</span>
+        <span class="row-body">
+          <span class="row-title">The Factor Covariance Forecast</span>
+          <span class="row-desc">EWMA volatilities and correlations, Newey&ndash;West correction, Monte-Carlo eigenfactor de-biasing, and the volatility-regime multiplier.</span>
+        </span>
+        <span class="chip chip-pdf">PDF</span>
+      </a>
+
+      <a class="row" href="docs/textbook/specific_risk.pdf">
+        <span class="stepno">07</span>
+        <span class="row-body">
+          <span class="row-title">Specific Risk</span>
+          <span class="row-desc">A five-layer per-stock idiosyncratic volatility model, from daily CSR residuals to a monthly &sigma;.</span>
+        </span>
+        <span class="chip chip-pdf">PDF</span>
+      </a>
+
+      <a class="row" href="docs/textbook/risk_decomp.pdf">
+        <span class="stepno">08</span>
+        <span class="row-body">
+          <span class="row-title">Portfolio Risk Decomposition</span>
+          <span class="row-desc">Composes X, F, and &Delta; into portfolio risk, Euler attribution by factor group, and active risk versus the cap-weighted market.</span>
+        </span>
+        <span class="chip chip-pdf">PDF</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===================== labs panel ===================== -->
+  <section id="panel-labs" role="tabpanel" aria-labelledby="tab-labs" hidden>
+    <p class="panel-note">Markdown-only specs, one per step: USE4 quotes, every judgment call the PDFs don&rsquo;t settle (with a chosen default), validation targets, and known pitfalls. The build notebooks are deliberately not provided &mdash; each spec is your build target. Notebooks open on GitHub.</p>
+
+    <div class="steps">
+      <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/00_data_cleaning/cleaning_spec.ipynb">
+        <span class="stepno">00</span>
+        <span class="row-body">
+          <span class="row-title">Data Cleaning</span>
+          <span class="row-desc">Raw Sharadar CSVs &rarr; typed, partitioned parquet. Everything downstream reads from it.</span>
+        </span>
+        <span class="chip chip-nb">Spec</span>
+      </a>
+
+      <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/01_estu/estu_spec.ipynb">
+        <span class="stepno">01</span>
+        <span class="row-body">
+          <span class="row-title">The Estimation Universe</span>
+          <span class="row-desc">Membership rules, thresholds, and buffers for a broad, investable, liquid ESTU &mdash; plus its PASS/FAIL battery.</span>
+        </span>
+        <span class="chip chip-nb">Spec</span>
+      </a>
+
+      <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/01.5_daily/daily_spec.ipynb">
+        <span class="stepno">01.5</span>
+        <span class="row-body">
+          <span class="row-title">Daily Returns Panel</span>
+          <span class="row-desc">The shared price/return plumbing every time-series factor reads &mdash; excess returns and the ESTU cap-weighted benchmark, built once.</span>
+        </span>
+        <span class="chip chip-nb">Spec</span>
+      </a>
+
+      <div class="group">
+        <div class="group-head">
+          <span class="stepno">02</span>
+          <span class="group-title">Style Factors</span>
+          <span class="group-desc">one spec per factor &mdash; build Size, Beta, and Book-to-Price first; respect Beta&nbsp;&rarr;&nbsp;{RESVOL,&nbsp;NLB} and Size&nbsp;&rarr;&nbsp;NLS</span>
+        </div>
+        <div class="grid">
+          <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/size/size_spec.ipynb">
+            <span class="card-top"><span class="card-title">Size</span><span class="card-code">SIZE</span></span>
+            <span class="card-desc">log market cap</span>
+          </a>
+          <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/beta/beta_spec.ipynb">
+            <span class="card-top"><span class="card-title">Beta</span><span class="card-code">BETA</span></span>
+            <span class="card-desc">time-series regression on the cap-weighted market</span>
+          </a>
+          <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/btop/btop_spec.ipynb">
+            <span class="card-top"><span class="card-title">Book-to-Price</span><span class="card-code">BTOP</span></span>
+            <span class="card-desc">book equity over market cap</span>
+          </a>
+          <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/eyld/eyld_spec.ipynb">
+            <span class="card-top"><span class="card-title">Earnings Yield</span><span class="card-code">EYLD</span></span>
+            <span class="card-desc">blended earnings-to-price</span>
+          </a>
+          <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/dyld/dyld_spec.ipynb">
+            <span class="card-top"><span class="card-title">Dividend Yield</span><span class="card-code">DYLD</span></span>
+            <span class="card-desc">trailing dividends over price</span>
+          </a>
+          <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/lev/lev_spec.ipynb">
+            <span class="card-top"><span class="card-title">Leverage</span><span class="card-code">LEV</span></span>
+            <span class="card-desc">market and book leverage blend</span>
+          </a>
+          <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/liq/liq_spec.ipynb">
+            <span class="card-top"><span class="card-title">Liquidity</span><span class="card-code">LIQ</span></span>
+            <span class="card-desc">share turnover at three horizons</span>
+          </a>
+          <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/gro/gro_spec.ipynb">
+            <span class="card-top"><span class="card-title">Growth</span><span class="card-code">GRO</span></span>
+            <span class="card-desc">sales and earnings growth</span>
+          </a>
+          <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/mom/mom_spec.ipynb">
+            <span class="card-top"><span class="card-title">Momentum</span><span class="card-code">MOM</span></span>
+            <span class="card-desc">relative strength, lagged</span>
+          </a>
+          <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/resvol/resvol_spec.ipynb">
+            <span class="card-top"><span class="card-title">Residual Volatility</span><span class="card-code">RESVOL</span></span>
+            <span class="card-desc">DASTD, CMRA, HSIGMA &mdash; orthogonalized to Beta</span>
+          </a>
+          <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/nls/nls_spec.ipynb">
+            <span class="card-top"><span class="card-title">Non-linear Size</span><span class="card-code">NLS</span></span>
+            <span class="card-desc">cube of Size, orthogonalized to Size</span>
+          </a>
+          <a class="card" href="https://github.com/jeves1202/use4-learning-lab/blob/main/02_style_factors/nlb/nlb_spec.ipynb">
+            <span class="card-top"><span class="card-title">Non-linear Beta</span><span class="card-code">NLB</span></span>
+            <span class="card-desc">cube of Beta, orthogonalized to Beta</span>
+          </a>
+        </div>
+      </div>
+
+      <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/03_industry_factors/industries_spec.ipynb">
+        <span class="stepno">03</span>
+        <span class="row-body">
+          <span class="row-title">Industry Factors</span>
+          <span class="row-desc">You design the scheme yourself from Sharadar&rsquo;s ~150 classification atoms &mdash; the spec gives the criteria for keeping it defensible and point-in-time.</span>
+        </span>
+        <span class="chip chip-nb">Spec</span>
+      </a>
+
+      <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/04_country_factor/country_spec.ipynb">
+        <span class="stepno">04</span>
+        <span class="row-body">
+          <span class="row-title">The Country Factor</span>
+          <span class="row-desc">The market-intercept anchor (unit exposure, &radic;mcap weights) plus a validation CSR proving the whole system is well-posed.</span>
+        </span>
+        <span class="chip chip-nb">Spec</span>
+      </a>
+
+      <div class="group">
+        <div class="group-head">
+          <span class="stepno">05</span>
+          <span class="group-title">The Cross-Sectional Regression</span>
+          <span class="group-desc">the engine, run twice</span>
+        </div>
+        <div class="steps sub">
+          <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/05_csr/csr_spec.ipynb">
+            <span class="row-body">
+              <span class="row-title">Monthly Production CSR</span>
+              <span class="row-desc">Exposures &rarr; monthly factor returns and specific returns, at each month-end.</span>
+            </span>
+            <span class="chip chip-nb">Spec</span>
+          </a>
+          <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/05_csr/daily_csr_spec.ipynb">
+            <span class="row-body">
+              <span class="row-title">Daily CSR</span>
+              <span class="row-desc">The same engine per trading day, with month-end exposures held fixed &mdash; Layer 0 for steps 06 and 07.</span>
+            </span>
+            <span class="chip chip-nb">Spec</span>
+          </a>
+        </div>
+      </div>
+
+      <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/06_fcov/fcov_spec.ipynb">
+        <span class="stepno">06</span>
+        <span class="row-body">
+          <span class="row-title">The Factor Covariance Forecast</span>
+          <span class="row-desc">EWMA &rarr; Newey&ndash;West &rarr; eigenfactor de-biasing &rarr; volatility regime, forecast at each month-end.</span>
+        </span>
+        <span class="chip chip-nb">Spec</span>
+      </a>
+
+      <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/07_specific_risk/specific_risk_spec.ipynb">
+        <span class="stepno">07</span>
+        <span class="row-body">
+          <span class="row-title">Specific Risk</span>
+          <span class="row-desc">Five layers from daily CSR residuals to a per-stock monthly &sigma;. Consumes step 05&rsquo;s daily output directly &mdash; it does not depend on 06.</span>
+        </span>
+        <span class="chip chip-nb">Spec</span>
+      </a>
+
+      <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/08_risk_decomp/risk_decomp_spec.ipynb">
+        <span class="stepno">08</span>
+        <span class="row-body">
+          <span class="row-title">Portfolio Risk Decomposition</span>
+          <span class="row-desc">Runs last: portfolio &sigma;, Euler attribution by factor group, and active risk versus the cap-weighted market.</span>
+        </span>
+        <span class="chip chip-nb">Spec</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===================== footer ===================== -->
+  <footer>
+    <p class="disclaimer"><strong>Disclaimer.</strong> This project is independent and not affiliated with or endorsed by MSCI. It approximates USE4-style factors from public and commercial data for educational purposes &mdash; a training ground, not a production risk system. Sharadar and Fama&ndash;French data are subject to their own licenses; no data ships with this repo.</p>
+    <div class="footrow">
+      <span>MSCI Barra USE4 Imitation</span>
+      <span>&copy; 2026 Jakob Eves &middot; <a href="https://github.com/jeves1202/use4-learning-lab/blob/main/LICENSE">CC BY-NC 4.0</a></span>
+    </div>
+  </footer>
+
+</div>
+
+<script>
+  (function () {
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+
+    function select(name) {
+      tabs.forEach(function (tab) {
+        var active = tab.id === 'tab-' + name;
+        tab.setAttribute('aria-selected', active ? 'true' : 'false');
+        document.getElementById(tab.getAttribute('aria-controls')).hidden = !active;
+      });
+    }
+
+    function fromHash() {
+      select(location.hash === '#labs' ? 'labs' : 'textbook');
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener('click', function () {
+        var name = tab.id.replace('tab-', '');
+        if (history.replaceState) {
+          history.replaceState(null, '', '#' + name);
+        } else {
+          location.hash = name;
+        }
+        select(name);
+      });
+    });
+
+    window.addEventListener('hashchange', fromHash);
+    fromHash();
+  })();
+</script>
 </body>
 </html>
