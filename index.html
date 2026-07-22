@@ -195,19 +195,6 @@
     .row-body { flex: 1 1 auto; min-width: 0; }
     .row-title { font-weight: 700; color: var(--steel); font-size: 1.02rem; }
     .row-desc { display: block; font-size: 0.86rem; color: var(--muted); margin-top: 0.08rem; }
-    .chip {
-      flex: 0 0 auto;
-      align-self: center;
-      font-size: 0.72rem;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      padding: 0.13rem 0.55rem;
-      border-radius: 3px;
-      border: 1px solid;
-      white-space: nowrap;
-    }
-    .chip-pdf { color: var(--steel); border-color: var(--steel); background: var(--steel-tint); }
-    .chip-nb  { color: var(--teal);  border-color: var(--teal);  background: var(--teal-tint); }
 
     /* group (step 02 / step 05) */
     .group { margin: 0.35rem 0 0.2rem; }
@@ -274,7 +261,6 @@
       body { font-size: 16px; }
       .row { flex-wrap: wrap; gap: 0.35rem 0.75rem; }
       .stepno { flex-basis: 2.4rem; }
-      .chip { margin-left: auto; }
       .group .sub, .grid { margin-left: 0.75rem; }
       .tab { padding: 0.45rem 0.8rem 0.55rem; font-size: 1.05rem; }
     }
@@ -291,7 +277,7 @@
     <hr class="rule-thin">
     <p class="identity">&sigma;<sub>p</sub><sup>2</sup> = <b>w</b><sup>&#8868;</sup><b>XFX</b><sup>&#8868;</sup><b>w</b> + <b>w</b><sup>&#8868;</sup><b>&Delta;w</b></p>
     <p class="identity-caption">the governing identity &mdash; factor risk plus specific risk; everything below serves it</p>
-    <p class="lede">An educational reconstruction of the Barra USE4 US equity risk model, built from Sharadar and Fama&ndash;French data and the published methodology notes. Each numbered step ships a <em>spec</em> and withholds the build &mdash; writing the build notebook is the point. The <em>textbook</em> is the answer key.</p>
+    <p class="lede">An educational reconstruction of the Barra USE4 US equity risk model, built from Sharadar and Fama&ndash;French data and the published methodology notes. Each numbered step ships a <em>spec</em> and withholds the build &mdash; writing the build notebook is the point. The <em>textbook</em> is the intuitive key.</p>
     <nav class="toplinks">
       <a class="ext" href="https://github.com/jeves1202/use4-learning-lab">GitHub repo</a><span class="sep">&middot;</span><a class="ext" href="https://github.com/jeves1202/use4-learning-lab/blob/main/README.md">README</a><span class="sep">&middot;</span><a class="ext" href="https://github.com/jeves1202/use4-learning-lab/blob/main/docs/USAGE.md">Usage guide</a>
     </nav>
@@ -317,7 +303,7 @@
 
   <!-- ===================== textbook panel ===================== -->
   <section id="panel-textbook" role="tabpanel" aria-labelledby="tab-textbook">
-    <p class="panel-note">One chapter per stage of the model &mdash; full theory alongside measured numbers from the reference build. Ordered in build order; the overview stands alone and is never a prerequisite.</p>
+    <p class="panel-note">About one chapter per stage of the model &mdash; full theory alongside measured numbers from the reference build. Ordered in build order; the overview stands alone and is never a prerequisite.</p>
 
     <a class="feature" href="docs/textbook/overview_risk_model.pdf">
       <span class="feature-tag">Start here</span>
@@ -333,7 +319,6 @@
           <span class="row-title">The Estimation Universe</span>
           <span class="row-desc">The foundation: a broad, investable, liquid US universe in the spirit of MSCI USA IMI. Don&rsquo;t build factors on a junk universe.</span>
         </span>
-        <span class="chip chip-pdf">PDF</span>
       </a>
 
       <div class="group">
@@ -400,7 +385,6 @@
           <span class="row-title">Industry Factors</span>
           <span class="row-desc">Unit-exposure industry dummies &mdash; and why a defensible, point-in-time classification scheme is the real work.</span>
         </span>
-        <span class="chip chip-pdf">PDF</span>
       </a>
 
       <a class="row" href="docs/textbook/csr.pdf">
@@ -409,7 +393,6 @@
           <span class="row-title">The Cross-Sectional Regression</span>
           <span class="row-desc">The engine: the country anchor and constraint that identify the system, then the regression that turns exposures into factor returns and specific returns.</span>
         </span>
-        <span class="chip chip-pdf">PDF</span>
       </a>
 
       <a class="row" href="docs/textbook/fcov.pdf">
@@ -418,7 +401,6 @@
           <span class="row-title">The Factor Covariance Forecast</span>
           <span class="row-desc">EWMA volatilities and correlations, Newey&ndash;West correction, Monte-Carlo eigenfactor de-biasing, and the volatility-regime multiplier.</span>
         </span>
-        <span class="chip chip-pdf">PDF</span>
       </a>
 
       <a class="row" href="docs/textbook/specific_risk.pdf">
@@ -427,7 +409,6 @@
           <span class="row-title">Specific Risk</span>
           <span class="row-desc">A five-layer per-stock idiosyncratic volatility model, from daily CSR residuals to a monthly &sigma;.</span>
         </span>
-        <span class="chip chip-pdf">PDF</span>
       </a>
 
       <a class="row" href="docs/textbook/risk_decomp.pdf">
@@ -436,7 +417,6 @@
           <span class="row-title">Portfolio Risk Decomposition</span>
           <span class="row-desc">Composes X, F, and &Delta; into portfolio risk, Euler attribution by factor group, and active risk versus the cap-weighted market.</span>
         </span>
-        <span class="chip chip-pdf">PDF</span>
       </a>
     </div>
   </section>
@@ -452,7 +432,6 @@
           <span class="row-title">Data Cleaning</span>
           <span class="row-desc">Raw Sharadar CSVs &rarr; typed, partitioned parquet. Everything downstream reads from it.</span>
         </span>
-        <span class="chip chip-nb">Spec</span>
       </a>
 
       <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/01_estu/estu_spec.ipynb">
@@ -461,7 +440,6 @@
           <span class="row-title">The Estimation Universe</span>
           <span class="row-desc">Membership rules, thresholds, and buffers for a broad, investable, liquid ESTU &mdash; plus its PASS/FAIL battery.</span>
         </span>
-        <span class="chip chip-nb">Spec</span>
       </a>
 
       <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/01.5_daily/daily_spec.ipynb">
@@ -470,7 +448,6 @@
           <span class="row-title">Daily Returns Panel</span>
           <span class="row-desc">The shared price/return plumbing every time-series factor reads &mdash; excess returns and the ESTU cap-weighted benchmark, built once.</span>
         </span>
-        <span class="chip chip-nb">Spec</span>
       </a>
 
       <div class="group">
@@ -537,7 +514,6 @@
           <span class="row-title">Industry Factors</span>
           <span class="row-desc">You design the scheme yourself from Sharadar&rsquo;s ~150 classification atoms &mdash; the spec gives the criteria for keeping it defensible and point-in-time.</span>
         </span>
-        <span class="chip chip-nb">Spec</span>
       </a>
 
       <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/04_country_factor/country_spec.ipynb">
@@ -546,7 +522,6 @@
           <span class="row-title">The Country Factor</span>
           <span class="row-desc">The market-intercept anchor (unit exposure, &radic;mcap weights) plus a validation CSR proving the whole system is well-posed.</span>
         </span>
-        <span class="chip chip-nb">Spec</span>
       </a>
 
       <div class="group">
@@ -561,14 +536,12 @@
               <span class="row-title">Monthly Production CSR</span>
               <span class="row-desc">Exposures &rarr; monthly factor returns and specific returns, at each month-end.</span>
             </span>
-            <span class="chip chip-nb">Spec</span>
           </a>
           <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/05_csr/daily_csr_spec.ipynb">
             <span class="row-body">
               <span class="row-title">Daily CSR</span>
               <span class="row-desc">The same engine per trading day, with month-end exposures held fixed &mdash; Layer 0 for steps 06 and 07.</span>
             </span>
-            <span class="chip chip-nb">Spec</span>
           </a>
         </div>
       </div>
@@ -579,7 +552,6 @@
           <span class="row-title">The Factor Covariance Forecast</span>
           <span class="row-desc">EWMA &rarr; Newey&ndash;West &rarr; eigenfactor de-biasing &rarr; volatility regime, forecast at each month-end.</span>
         </span>
-        <span class="chip chip-nb">Spec</span>
       </a>
 
       <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/07_specific_risk/specific_risk_spec.ipynb">
@@ -588,7 +560,6 @@
           <span class="row-title">Specific Risk</span>
           <span class="row-desc">Five layers from daily CSR residuals to a per-stock monthly &sigma;. Consumes step 05&rsquo;s daily output directly &mdash; it does not depend on 06.</span>
         </span>
-        <span class="chip chip-nb">Spec</span>
       </a>
 
       <a class="row" href="https://github.com/jeves1202/use4-learning-lab/blob/main/08_risk_decomp/risk_decomp_spec.ipynb">
@@ -597,7 +568,6 @@
           <span class="row-title">Portfolio Risk Decomposition</span>
           <span class="row-desc">Runs last: portfolio &sigma;, Euler attribution by factor group, and active risk versus the cap-weighted market.</span>
         </span>
-        <span class="chip chip-nb">Spec</span>
       </a>
     </div>
   </section>
